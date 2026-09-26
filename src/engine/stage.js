@@ -221,7 +221,7 @@ function hotspotsMarkup(list) {
 export function titleBackdrop(el) {
   const a = document.createElement('div');
   a.className = 'backdrop-half np';
-  a.innerHTML = `<svg viewBox="200 60 1300 731" preserveAspectRatio="xMidYMid slice">${scenes['room-np'].build()}</svg>`;
+  a.innerHTML = `<svg viewBox="200 60 1300 731" preserveAspectRatio="xMidYMid slice">${scenes['room-np-night'].build()}</svg>`;
   const b = document.createElement('div');
   b.className = 'backdrop-half p';
   b.innerHTML = `<svg viewBox="150 40 1350 759" preserveAspectRatio="xMidYMid slice">${scenes['kitchen-p'].build()}</svg>`;

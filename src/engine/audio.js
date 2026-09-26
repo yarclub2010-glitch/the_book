@@ -482,6 +482,13 @@ const SFX = {
   sting(a, t) {
     [40, 47, 52].forEach((n) => a.tone(a.sfxBus, { freq: midi(n), type: 'triangle', t, dur: 3, vol: 0.06, attack: 0.02, release: 3, send: 0.8 }));
   },
+  // Шаги по старому полу
+  steps(a, t) {
+    for (let i = 0; i < 4; i++) {
+      a.burst(a.sfxBus, { t: t + i * 0.38, dur: 0.09, vol: 0.35, type: 'lowpass', freq: 380 + (i % 2) * 60, q: 1 });
+      a.burst(a.sfxBus, { t: t + i * 0.38 + 0.02, dur: 0.05, vol: 0.06, freq: 2200, q: 2 });
+    }
+  },
   // Осмотр предмета: мягкий короткий звук
   look(a, t) {
     a.tone(a.sfxBus, { freq: midi(88), t, dur: 0.6, vol: 0.035, attack: 0.005, send: 0.5 });
