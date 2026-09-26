@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Футаж: сцена 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;600&family=Rubik:wght@700;900&family=Unbounded:wght@600&display=swap">
+<style>
+  :root {
+    --paper: #f3e9d6;
+    --ink: #3b332c;
+    --ochre: #d8a03c;
+    --orange: #f26b3a;
+    --grey: #b9ae9e;
+    --page: #1c1a17;
+    --page-ink: #efe6d6;
+    --muted: #a39a8c;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page);
+    color: var(--page-ink);
+    font: 15px/1.5 "Onest", system-ui, sans-serif;
+    padding: 24px 16px 40px;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+  header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  header h1 { font: 600 20px/1.2 "Unbounded", system-ui, sans-serif; margin: 0; }
+  header span { color: var(--muted); font-size: 14px; }
+
+  /* ---------- Кадр ---------- */
+  .frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 10px;
+    background: var(--paper);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  }
+  .frame svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .grain {
+    position: absolute; inset: 0; pointer-events: none;
+    mix-blend-mode: multiply; opacity: 0.55;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.23 0 0 0 0 0.2 0 0 0 0 0.17 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Камера и тряска */
+  #cam { transition: transform 2.6s cubic-bezier(.6, 0, .2, 1); }
+  .zoom #cam { transform: translate(-1290px, -486px) scale(1.8); }
+  .shake #shake { animation: shake 0.11s linear infinite; }
+  @keyframes shake {
+    0% { transform: translate(0, 0); } 25% { transform: translate(2px, -1.5px); }
+    50% { transform: translate(-1.5px, 1px); } 75% { transform: translate(1px, 2px); } 100% { transform: translate(0, 0); }
+  }
+  .shake .cup { animation: clink 0.18s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+  @keyframes clink { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+
+  #train { transform: translateX(-1500px); }
+  .train #train { transform: translateX(1600px); transition: transform 4.2s linear; }
+
+  .dust { animation: dust 9s ease-in-out infinite alternate; }
+  @keyframes dust { from { transform: translate(0, 0); } to { transform: translate(18px, -26px); } }
+
+  #photo-glow { opacity: 0.35; transition: opacity 1.2s; }
+  .train #photo-glow { opacity: 0.9; }
+
+  .moved { transition: filter 0.8s; }
+  .reveal .moved { filter: url(#halo); }
+  .hint-ring { opacity: 0; transition: opacity 0.8s; }
+  .reveal .hint-ring { opacity: 1; animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+
+  /* ---------- Надписи поверх кадра ---------- */
+  .chip {
+    position: absolute; left: 2.2%; top: 3.5%;
+    font: 600 clamp(9px, 1.25vw, 14px)/1 "Unbounded", sans-serif;
+    color: var(--ink); background: rgba(243, 233, 214, 0.85);
+    padding: 0.6em 0.9em; border-radius: 999px; letter-spacing: 0.02em;
+    border: 1.5px solid var(--ink);
+  }
+  .sub {
+    position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%);
+    font-size: clamp(10px, 1.4vw, 15px); color: var(--ink);
+    background: rgba(243, 233, 214, 0.9); padding: 0.3em 0.8em; border-radius: 4px;
+    opacity: 0; transition: opacity 0.4s; white-space: nowrap;
+  }
+  .sub.on { opacity: 1; }
+
+  .dialog {
+    position: absolute; left: 6%; right: 6%; bottom: 5%;
+    min-height: 21%;
+    padding: 2.2% 3% 2.4%;
+    background: rgba(250, 246, 238, 0.82);
+    backdrop-filter: blur(2px);
+    border: 1px solid rgba(59, 51, 44, 0.25);
+    color: var(--ink);
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  .dialog.on { opacity: 1; transform: none; }
+  .dialog::before, .dialog::after {
+    content: ""; position: absolute; width: 11%; height: 22%;
+    background: rgba(216, 160, 60, 0.55); top: -9%;
+  }
+  .dialog::before { left: -2%; transform: rotate(-8deg); }
+  .dialog::after { right: -2%; transform: rotate(7deg); }
+  .name {
+    font: 600 clamp(9px, 1.25vw, 14px)/1 "Unbounded", sans-serif;
+    color: var(--orange); letter-spacing: 0.04em; margin-bottom: 0.6em;
+  }
+  .line { font-size: clamp(12px, 2vw, 23px); line-height: 1.35; min-height: 1.35em; }
+  .line.thought { font-style: italic; color: #6a5d50; }
+  .smudge { display: inline-block; filter: blur(0); transition: filter 2.2s, opacity 2.2s; }
+  .smudge.bleed { filter: blur(3px); opacity: 0.55; }
+
+  .card {
+    position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
+    background: rgba(28, 26, 23, 0.92); color: var(--page-ink);
+    opacity: 0; transition: opacity 1.2s; pointer-events: none;
+  }
+  .card.on { opacity: 1; }
+  .card b { display: block; font: 600 clamp(16px, 3vw, 34px)/1.2 "Unbounded", sans-serif; margin-bottom: 0.4em; }
+  .card small { font-size: clamp(11px, 1.4vw, 15px); color: var(--muted); }
+
+  .start {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    background: rgba(28, 26, 23, 0.55); border: 0; cursor: pointer; padding: 0;
+  }
+  .start span {
+    font: 600 clamp(12px, 1.8vw, 18px)/1 "Unbounded", sans-serif; color: var(--ink);
+    background: var(--paper); padding: 1em 1.6em; border-radius: 999px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  }
+  .start:focus-visible span { outline: 3px solid var(--orange); outline-offset: 3px; }
+
+  /* ---------- Под кадром ---------- */
+  .timeline { display: flex; gap: 6px; flex-wrap: wrap; margin: 14px 0 22px; }
+  .timeline span {
+    font-size: 13px; padding: 4px 10px; border-radius: 999px;
+    border: 1px solid #4a443c; color: var(--muted);
+  }
+  .timeline span.on { border-color: var(--orange); color: var(--page-ink); }
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 28px; }
+  .notes h2 { font: 600 14px/1.3 "Unbounded", sans-serif; margin: 0 0 6px; color: var(--ochre); }
+  .notes ul { margin: 0; padding-left: 18px; color: #d9cfbf; }
+  .notes li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Сцена 1 · «Буквы на холодильнике»</h1>
+    <span>черновой футаж для обсуждения · ~25 секунд · со звуком</span>
+  </header>
+
+  <div class="frame" id="frame">
+    <svg viewBox="0 0 1280 720" role="img" aria-label="Кухня утром. Поезд проходит за окном, камера приближается к холодильнику с магнитными буквами.">
+      <defs>
+        <!-- Ризография: второй слой краски чуть смещён -->
+        <filter id="riso" x="-2%" y="-2%" width="104%" height="104%">
+          <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0.95  0 0 0 0 0.42  0 0 0 0 0.23  -0.33 -0.33 -0.33 0 1" result="dark"/>
+          <feComponentTransfer in="dark" result="orangeLayer"><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+          <feOffset in="orangeLayer" dx="3" dy="2" result="shifted"/>
+          <feBlend in="SourceGraphic" in2="shifted" mode="multiply"/>
+        </filter>
+        <filter id="halo" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#f26b3a" flood-opacity="0.9"/>
+        </filter>
+        <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="10"/>
+        </filter>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f7d9a0"/>
+          <stop offset="1" stop-color="#f3e9d6"/>
+        </linearGradient>
+        <linearGradient id="beam" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffe7b0" stop-opacity="0.55"/>
+          <stop offset="1" stop-color="#ffe7b0" stop-opacity="0"/>
+        </linearGradient>
+        <clipPath id="windowClip"><rect x="100" y="120" width="450" height="340"/></clipPath>
+      </defs>
+
+      <g id="cam">
+        <g id="shake">
+          <g filter="url(#riso)">
+            <!-- Стена и пол -->
+            <rect width="1280" height="720" fill="#f3e9d6"/>
+            <rect x="0" y="0" width="1280" height="545" fill="#ead7b4"/>
+            <rect x="0" y="545" width="1280" height="175" fill="#c9b596"/>
+            <path d="M0 545H1280" stroke="#3b332c" stroke-width="3"/>
+            <g stroke="#3b332c" stroke-opacity="0.12" stroke-width="2">
+              <path d="M40 0V545M160 0V545M280 0V545M400 0V545M520 0V545M640 0V545M760 0V545M880 0V545M1000 0V545M1120 0V545M1240 0V545"/>
+            </g>
+
+            <!-- Окно: насыпь на уровне крыши -->
+            <g clip-path="url(#windowClip)">
+              <rect x="100" y="120" width="450" height="340" fill="url(#sky)"/>
+              <circle cx="470" cy="190" r="46" fill="#f26b3a" opacity="0.35"/>
+              <path d="M100 330 L550 290 L550 460 L100 460Z" fill="#b9ae9e"/>
+              <path d="M100 330 L550 290" stroke="#3b332c" stroke-width="3"/>
+              <path d="M100 318 L550 278 M100 322 L550 282" stroke="#3b332c" stroke-width="2" opacity="0.7"/>
+              <g stroke="#3b332c" stroke-width="2" opacity="0.5">
+                <path d="M130 316v10M180 312v10M230 307v10M280 303v10M330 298v10M380 294v10M430 289v10M480 285v10M530 281v10"/>
+              </g>
+              <g opacity="0.55" fill="#3b332c">
+                <rect x="170" y="370" width="60" height="90"/>
+                <rect x="240" y="395" width="44" height="65"/>
+                <path d="M160 370 L200 340 L240 370Z"/>
+              </g>
+              <!-- Электричка -->
+              <g id="train">
+                <g transform="rotate(-5 325 260)">
+                  <rect x="-40" y="228" width="560" height="74" rx="10" fill="#3b332c"/>
+                  <rect x="-40" y="274" width="560" height="9" fill="#f26b3a"/>
+                  <g fill="#f7d9a0" opacity="0.9">
+                    <rect x="-10" y="240" width="40" height="24" rx="3"/><rect x="45" y="240" width="40" height="24" rx="3"/>
+                    <rect x="100" y="240" width="40" height="24" rx="3"/><rect x="155" y="240" width="40" height="24" rx="3"/>
+                    <rect x="210" y="240" width="40" height="24" rx="3"/><rect x="265" y="240" width="40" height="24" rx="3"/>
+                    <rect x="320" y="240" width="40" height="24" rx="3"/><rect x="375" y="240" width="40" height="24" rx="3"/>
+                    <rect x="430" y="240" width="40" height="24" rx="3"/>
+                  </g>
+                  <path d="M520 228 q40 6 46 37 v37 h-46z" fill="#3b332c"/>
+                  <rect x="-640" y="228" width="580" height="74" rx="10" fill="#3b332c"/>
+                  <rect x="-640" y="274" width="580" height="9" fill="#f26b3a"/>
+                </g>
+              </g>
+            </g>
+            <rect x="100" y="120" width="450" height="340" fill="none" stroke="#3b332c" stroke-width="10"/>
+            <path d="M325 120V460M100 285H550" stroke="#3b332c" stroke-width="7"/>
+            <!-- Подоконник -->
+            <rect x="80" y="460" width="490" height="22" fill="#f3e9d6" stroke="#3b332c" stroke-width="3"/>
+            <g class="cup"><path d="M430 420h40v36a8 8 0 0 1-8 8h-24a8 8 0 0 1-8-8z" fill="#d8a03c" stroke="#3b332c" stroke-width="3"/><path d="M470 430q14 4 0 20" fill="none" stroke="#3b332c" stroke-width="3"/></g>
+            <g><path d="M150 460l8-40h40l8 40z" fill="#f26b3a" stroke="#3b332c" stroke-width="3"/><path d="M178 420c-20-30 0-50 0-50s20 20 0 50M178 420c10-28 34-30 34-30s-6 26-34 30" fill="#b9ae9e" stroke="#3b332c" stroke-width="3"/></g>
+
+            <!-- Луч света и пыль -->
+            <path d="M120 470 L540 470 L760 720 L260 720Z" fill="url(#beam)"/>
+            <g fill="#fff4d6">
+              <circle class="dust" cx="300" cy="560" r="2.5"/><circle class="dust" cx="420" cy="600" r="2"/>
+              <circle class="dust" cx="360" cy="650" r="3" style="animation-delay:-3s"/><circle class="dust" cx="520" cy="620" r="2" style="animation-delay:-5s"/>
+              <circle class="dust" cx="470" cy="540" r="2.5" style="animation-delay:-2s"/>
+            </g>
+
+            <!-- Часы: спешат на три минуты -->
+            <g transform="translate(700 90)">
+              <circle r="42" fill="#f3e9d6" stroke="#3b332c" stroke-width="5"/>
+              <g stroke="#3b332c" stroke-width="3"><path d="M0-34v7M0 34v-7M-34 0h7M34 0h-7"/></g>
+              <path d="M0 0L0 -20" stroke="#3b332c" stroke-width="5" stroke-linecap="round" transform="rotate(201)"/>
+              <path d="M0 0L0 -32" stroke="#f26b3a" stroke-width="3" stroke-linecap="round" transform="rotate(252)"/>
+              <circle r="4" fill="#3b332c"/>
+            </g>
+
+            <!-- Полка -->
+            <rect x="640" y="215" width="270" height="12" fill="#d8a03c" stroke="#3b332c" stroke-width="3"/>
+            <g class="cup"><rect x="660" y="170" width="34" height="45" rx="4" fill="#b9ae9e" stroke="#3b332c" stroke-width="3"/></g>
+            <g class="cup"><path d="M705 185h32v24a6 6 0 0 1-6 6h-20a6 6 0 0 1-6-6z" fill="#f3e9d6" stroke="#3b332c" stroke-width="3"/></g>
+            <rect x="752" y="150" width="22" height="65" rx="3" fill="#f26b3a" stroke="#3b332c" stroke-width="3"/>
+
+            <!-- Холодильник -->
+            <rect x="960" y="85" width="230" height="598" rx="22" fill="#f8f1e4" stroke="#3b332c" stroke-width="5"/>
+            <path d="M960 300H1190" stroke="#3b332c" stroke-width="4"/>
+            <rect x="1166" y="140" width="10" height="110" rx="5" fill="#3b332c"/>
+            <rect x="1166" y="330" width="10" height="150" rx="5" fill="#3b332c"/>
+            <g id="letters"></g>
+
+            <!-- Стол и чашка на одного -->
+            <path d="M0 610 L640 610 L660 720 L0 720Z" fill="#b9ae9e" stroke="#3b332c" stroke-width="4"/>
+            <ellipse cx="220" cy="640" rx="62" ry="14" fill="#f3e9d6" stroke="#3b332c" stroke-width="3"/>
+            <g class="cup"><path d="M330 600h44v30a10 10 0 0 1-10 10h-24a10 10 0 0 1-10-10z" fill="#f26b3a" stroke="#3b332c" stroke-width="3"/></g>
+
+            <!-- Тихон: чёрная водолазка, большие наушники -->
+            <g transform="translate(700 420)">
+              <path d="M-120 300 C-118 180 -80 150 0 140 C80 150 118 180 120 300Z" fill="#3b332c"/>
+              <rect x="-22" y="96" width="44" height="56" rx="12" fill="#3b332c"/>
+              <ellipse cx="0" cy="62" rx="54" ry="62" fill="#3b332c"/>
+              <path d="M-58 50 C-60 -20 60 -20 58 50" fill="none" stroke="#f26b3a" stroke-width="10" stroke-linecap="round"/>
+              <rect x="-72" y="40" width="26" height="44" rx="10" fill="#f26b3a" stroke="#3b332c" stroke-width="3"/>
+              <rect x="46" y="40" width="26" height="44" rx="10" fill="#f26b3a" stroke="#3b332c" stroke-width="3"/>
+            </g>
+          </g>
+
+          <!-- Фото-якорь: единственная картинка в естественном цвете, без ризографии -->
+          <g id="anchor">
+            <rect id="photo-glow" x="786" y="116" width="100" height="104" rx="8" fill="#fff6c9" filter="url(#glow)"/>
+            <g transform="rotate(-4 836 168)">
+              <rect x="796" y="124" width="80" height="92" fill="#fbfbf7" stroke="#2a2a2a" stroke-width="2"/>
+              <rect x="803" y="131" width="66" height="64" fill="#8fbfe3"/>
+              <rect x="803" y="176" width="66" height="19" fill="#e9e4da"/>
+              <rect x="803" y="131" width="30" height="45" fill="#b6d7ef" stroke="#ffffff" stroke-width="2"/>
+              <circle cx="826" cy="160" r="7" fill="#e7b48f"/><path d="M816 176q10-12 20 0z" fill="#3a6fb0"/>
+              <path d="M819 156q7-10 14 0" fill="#5a3a22"/>
+              <circle cx="850" cy="154" r="9" fill="#e7b48f"/><path d="M838 176q12-16 24 0z" fill="#c9433a"/>
+              <path d="M840 152q10-16 20 0v10q-3-8-10-8t-10 8z" fill="#7a4a2a"/>
+              <rect x="858" y="170" width="10" height="7" fill="#e07a2e"/>
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
+    <div class="grain"></div>
+
+    <div class="chip">мир «Не приходи» · 6:39</div>
+    <div class="sub" id="sub"></div>
+    <div class="dialog" id="dialog">
+      <div class="name" id="name">ТИХОН</div>
+      <div class="line" id="line"></div>
+    </div>
+    <div class="card" id="card"><div><b>the_book</b><small>Сцена 1 · «Буквы на холодильнике» · черновой футаж</small></div></div>
+    <button class="start" id="start" type="button"><span>▶ Смотреть со звуком</span></button>
+  </div>
+
+  <div class="timeline" id="timeline">
+    <span data-t="0">0:00 утро, пыль в луче</span>
+    <span data-t="3">0:03 электричка на уровне крыши</span>
+    <span data-t="7">0:07 два гудка отца</span>
+    <span data-t="9">0:09 наезд на холодильник</span>
+    <span data-t="15">0:15 «…ходи?»</span>
+    <span data-t="18">0:18 «При-ходи?..»</span>
+  </div>
+
+  <section class="notes">
+    <div>
+      <h2>Что показано</h2>
+      <ul>
+        <li>Мир «Не приходи» в технике ризографии: охра, оранжевый, зерно, смещённый слой краски.</li>
+        <li>Фото-якорь на полке — единственное цветное пятно, светится сильнее, когда трясёт дом.</li>
+        <li>Часы на стене показывают 6:42 — спешат на три минуты (задел для загадки «Два гудка»).</li>
+        <li>Буквы Х, О, Д, И сдвинуты не до конца и перекошены; «У» осталась на месте.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Звук</h2>
+      <ul>
+        <li>Lo-fi-подложка с треском винила и мотив из шести нот.</li>
+        <li>Поезд: гул и стук колёс, затем два коротких гудка.</li>
+        <li>На «При-ходи?..» мотив звучит второй раз с чуть расстроенной копией — намёк на другой мир.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Что обсудить</h2>
+      <ul>
+        <li>Стиль и палитра: так ли должен ощущаться мир «Не приходи»?</li>
+        <li>Темп: сколько времени дать игроку, чтобы самому заметить буквы?</li>
+        <li>Тихон со спины — или показывать лицо и эмоции, как в классической новелле?</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const NS = 'http://www.w3.org/2000/svg';
+  const frame = document.getElementById('frame');
+
+  // ---------- Магнитные буквы ----------
+  function rng(seed) {
+    return () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+  }
+  const r = rng(7);
+  const alphabet = 'АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЭЮЯ';
+  const colors = ['#f26b3a', '#d8a03c', '#3b332c', '#b9ae9e'];
+  const lettersG = document.getElementById('letters');
+  // Буквы, которые двойник попытался выложить в слово «УХОДИ».
+  // «У» не сдвинулась совсем, остальные сдвинуты не до конца.
+  const moved = { 'Х': [20, -24, 16], 'О': [14, -18, -14], 'Д': [-12, -20, 19], 'И': [-18, -10, -11] };
+  [...alphabet].forEach((ch, i) => {
+    const col = i % 6;
+    const row = Math.floor(i / 6);
+    let x = 990 + col * 30 + (r() - 0.5) * 8;
+    let y = 360 + row * 50 + (r() - 0.5) * 10;
+    let rot = (r() - 0.5) * 8;
+    const t = document.createElementNS(NS, 'text');
+    if (moved[ch]) {
+      const [dx, dy, dr] = moved[ch];
+      x += dx; y += dy; rot = dr;
+      t.classList.add('moved');
+      const ring = document.createElementNS(NS, 'circle');
+      ring.setAttribute('cx', x); ring.setAttribute('cy', y - 10);
+      ring.setAttribute('r', 21);
+      ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', '#f26b3a');
+      ring.setAttribute('stroke-width', '2'); ring.setAttribute('stroke-dasharray', '4 4');
+      ring.classList.add('hint-ring');
+      lettersG.append(ring);
+    }
+    t.textContent = ch;
+    t.setAttribute('x', x);
+    t.setAttribute('y', y);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('transform', `rotate(${rot.toFixed(1)} ${x.toFixed(1)} ${(y - 10).toFixed(1)})`);
+    t.setAttribute('font-family', 'Rubik, Arial Black, sans-serif');
+    t.setAttribute('font-weight', '900');
+    t.setAttribute('font-size', '30');
+    t.setAttribute('fill', colors[i % colors.length]);
+    t.setAttribute('stroke', '#3b332c');
+    t.setAttribute('stroke-width', '1.2');
+    lettersG.append(t);
+  });
+
+  // ---------- Звук (синтез в браузере, без файлов) ----------
+  let ac = null;
+  const midi = (n) => 440 * 2 ** ((n - 69) / 12);
+
+  function noiseBuffer(seconds, brown) {
+    const b = ac.createBuffer(1, ac.sampleRate * seconds, ac.sampleRate);
+    const d = b.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < d.length; i++) {
+      const w = Math.random() * 2 - 1;
+      if (brown) { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; } else d[i] = w;
+    }
+    return b;
+  }
+
+  function audio(master) {
+    const now = ac.currentTime + 0.05;
+
+    // Треск винила
+    const crackle = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+    const cd = crackle.getChannelData(0);
+    for (let i = 0; i < cd.length; i++) cd[i] = Math.random() < 0.0009 ? (Math.random() * 2 - 1) : 0;
+    const cs = ac.createBufferSource(); cs.buffer = crackle; cs.loop = true;
+    const cg = ac.createGain(); cg.gain.value = 0.18;
+    cs.connect(cg).connect(master); cs.start(now); cs.stop(now + 25);
+
+    // Lo-fi-подложка: два аккорда
+    const chords = [[52, 56, 59, 63], [49, 52, 56, 61]];
+    for (let k = 0; k < 6; k++) {
+      const chord = chords[k % 2];
+      const t0 = now + k * 4;
+      chord.forEach((n) => {
+        const o = ac.createOscillator(); o.type = 'triangle'; o.frequency.value = midi(n);
+        o.detune.value = (Math.random() - 0.5) * 12;
+        const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900;
+        const g = ac.createGain();
+        g.gain.setValueAtTime(0, t0);
+        g.gain.linearRampToValueAtTime(0.045, t0 + 1.2);
+        g.gain.linearRampToValueAtTime(0.0001, t0 + 4.2);
+        o.connect(f).connect(g).connect(master); o.start(t0); o.stop(t0 + 4.3);
+      });
+    }
+
+    // Мотив из шести нот
+    function motif(t0, detune) {
+      [76, 79, 83, 81, 79, 76].forEach((n, i) => {
+        [0, detune].forEach((dt, layer) => {
+          if (layer && !dt) return;
+          const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = midi(n); o.detune.value = dt;
+          const g = ac.createGain();
+          const t = t0 + i * 0.42;
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(layer ? 0.05 : 0.09, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+          o.connect(g).connect(master); o.start(t); o.stop(t + 1.4);
+        });
+      });
+    }
+    motif(now + 0.8, 0);
+    motif(now + 18.2, 38);
+
+    // Поезд: гул и стук колёс
+    const rum = ac.createBufferSource(); rum.buffer = noiseBuffer(6, true);
+    const rf = ac.createBiquadFilter(); rf.type = 'lowpass'; rf.frequency.value = 260;
+    const rg = ac.createGain();
+    rg.gain.setValueAtTime(0, now + 2.6);
+    rg.gain.linearRampToValueAtTime(0.9, now + 4.2);
+    rg.gain.linearRampToValueAtTime(0.8, now + 6.6);
+    rg.gain.linearRampToValueAtTime(0, now + 8.6);
+    rum.connect(rf).connect(rg).connect(master); rum.start(now + 2.6); rum.stop(now + 8.8);
+
+    const white = noiseBuffer(0.2, false);
+    for (let t = 3.2; t < 8.2; t += 0.62) {
+      [0, 0.13].forEach((off) => {
+        const s = ac.createBufferSource(); s.buffer = white;
+        const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1800; bp.Q.value = 2;
+        const g = ac.createGain();
+        const tt = now + t + off;
+        const level = 0.35 * Math.sin(Math.PI * (t - 3) / 5.4);
+        g.gain.setValueAtTime(level, tt); g.gain.exponentialRampToValueAtTime(0.0001, tt + 0.07);
+        s.connect(bp).connect(g).connect(master); s.start(tt); s.stop(tt + 0.08);
+      });
+    }
+
+    // Два гудка
+    [7.2, 7.85].forEach((t) => {
+      [311.1, 392].forEach((fq) => {
+        const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = fq;
+        const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1600;
+        const g = ac.createGain();
+        g.gain.setValueAtTime(0, now + t);
+        g.gain.linearRampToValueAtTime(0.09, now + t + 0.04);
+        g.gain.setValueAtTime(0.09, now + t + 0.34);
+        g.gain.linearRampToValueAtTime(0, now + t + 0.42);
+        o.connect(f).connect(g).connect(master); o.start(now + t); o.stop(now + t + 0.45);
+      });
+    });
+  }
+
+  // ---------- Таймлайн ----------
+  const sub = document.getElementById('sub');
+  const dialog = document.getElementById('dialog');
+  const line = document.getElementById('line');
+  const card = document.getElementById('card');
+  const start = document.getElementById('start');
+  const chips = [...document.querySelectorAll('#timeline span')];
+  let timers = [];
+  let typing = null;
+
+  const at = (s, fn) => timers.push(setTimeout(fn, s * 1000));
+  const subtitle = (text) => { sub.textContent = text; sub.classList.toggle('on', !!text); };
+
+  function say(html, { thought = false } = {}) {
+    dialog.classList.add('on');
+    line.classList.toggle('thought', thought);
+    clearInterval(typing);
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    const full = tmp.textContent;
+    let i = 0;
+    line.textContent = '';
+    typing = setInterval(() => {
+      i++;
+      line.textContent = full.slice(0, i);
+      if (i >= full.length) { clearInterval(typing); line.innerHTML = html; }
+    }, 38);
+  }
+
+  function reset() {
+    timers.forEach(clearTimeout); timers = [];
+    clearInterval(typing);
+    frame.className = 'frame';
+    subtitle('');
+    dialog.classList.remove('on');
+    card.classList.remove('on');
+    line.textContent = '';
+    chips.forEach((c) => c.classList.remove('on'));
+  }
+
+  function mark(t) { chips.forEach((c) => c.classList.toggle('on', Number(c.dataset.t) === t)); }
+
+  function play() {
+    reset();
+    try {
+      if (ac) ac.close();
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      const master = ac.createGain(); master.gain.value = 0.8; master.connect(ac.destination);
+      audio(master);
+    } catch (e) {
+      ac = null; // без звука тоже работает
+    }
+    start.hidden = true;
+    mark(0);
+    at(3, () => { mark(3); frame.classList.add('train', 'shake'); subtitle('[гудит электричка, звенят чашки]'); });
+    at(7.1, () => { mark(7); subtitle('[два коротких гудка]'); });
+    at(8.4, () => { frame.classList.remove('shake'); subtitle(''); });
+    at(9, () => { mark(9); frame.classList.add('zoom'); });
+    at(10.6, () => say('Опять поезд всё растряс…'));
+    at(12.8, () => { say('Нет. Буквы не упали. Их кто-то сдвинул.'); frame.classList.add('reveal'); });
+    at(15.4, () => { mark(15); say('…ходи?'); });
+    at(18, () => { mark(18); say('<span class="smudge" id="pri">При</span>-ходи?..', { thought: true }); });
+    at(19.6, () => document.getElementById('pri')?.classList.add('bleed'));
+    at(22.5, () => { dialog.classList.remove('on'); card.classList.add('on'); });
+    at(25.5, () => { start.hidden = false; start.querySelector('span').textContent = '↻ Посмотреть ещё раз'; });
+  }
+
+  start.addEventListener('click', play);
+})();
+</script>
+</body>
+</html>
