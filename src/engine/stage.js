@@ -24,8 +24,15 @@ export class Stage {
     return this.layer ? this.layer.querySelector('svg') : null;
   }
 
+  // Разметка сцены из двух слоёв:
+  //   art — вся картинка и свет; никогда не ловит щелчки;
+  //   hotspots — невидимые активные зоны, всегда поверх картинки.
+  // Поэтому новые предметы и свет не могут перекрыть зоны — проверять ничего не нужно.
   markup(id) {
-    if (!this.cache.has(id)) this.cache.set(id, scenes[id].build());
+    if (!this.cache.has(id)) {
+      const def = scenes[id];
+      this.cache.set(id, `<g class="art" pointer-events="none">${def.build()}</g>${hotspotsMarkup(def.hotspots || [])}`);
+    }
     return this.cache.get(id);
   }
 
@@ -35,6 +42,47 @@ export class Stage {
     layer.dataset.scene = id;
     layer.innerHTML = `<svg class="scene" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">${this.markup(id)}</svg>`;
     return layer;
+  }
+
+  // Включить группы активных зон: 'look' — осмотр, имя загадки — её предметы
+  setGroups(groups = []) {
+    const svg = this.root;
+    if (!svg) return;
+    svg.querySelectorAll('.hs').forEach((el) => el.classList.toggle('active', groups.includes(el.dataset.group)));
+  }
+
+  hotspot(id) {
+    return this.scene && (this.scene.hotspots || []).find((h) => h.id === id);
+  }
+
+  // Проверка для разработчика: каждая зона должна ловить щелчок в своей середине,
+  // а не отдавать его соседней зоне. Возвращает список проблем (пустой — всё хорошо).
+  auditHotspots() {
+    const svg = this.root;
+    if (!svg) return ['нет сцены'];
+    const problems = [];
+    const zones = [...svg.querySelectorAll('.hs')];
+    const saved = zones.map((z) => z.classList.contains('active'));
+    zones.forEach((z) => z.classList.add('active'));
+    const frame = this.view.getBoundingClientRect();
+    for (const z of zones) {
+      const r = z.getBoundingClientRect();
+      const x = r.left + r.width / 2;
+      const y = r.top + r.height / 2;
+      if (r.width < 1 || x < frame.left || x > frame.right || y < frame.top || y > frame.bottom) continue; // вне кадра
+      const stack = document.elementsFromPoint(x, y);
+      const first = stack.find((el) => el.closest('.hs'));
+      const hit = first && first.closest('.hs');
+      if (hit !== z) {
+        problems.push(`${z.dataset.id}: перекрыта зоной ${hit ? hit.dataset.id : '—'}`);
+        continue;
+      }
+      // интерфейс поверх зоны (кнопки, окна) — не ошибка сцены, но полезно знать
+      const ui = stack[0] && stack[0].closest('button, nav, .banner, .panel, .screen.on');
+      if (ui) problems.push(`${z.dataset.id}: под элементом интерфейса (${ui.id || ui.className})`);
+    }
+    zones.forEach((z, i) => z.classList.toggle('active', saved[i]));
+    return problems;
   }
 
   // Показать сцену: transition — cut | fade | cross | morph
@@ -155,6 +203,18 @@ export class Stage {
     this.layer = null;
     this.scene = null;
   }
+}
+
+// Активные зоны: { id, group = 'look', label, shape: { points: [[x, y], …] } | { circle: [x, y, r] } }
+function hotspotsMarkup(list) {
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const items = list.map((h) => {
+    const shape = h.shape.circle
+      ? `<circle class="hs-shape" cx="${h.shape.circle[0].toFixed(1)}" cy="${h.shape.circle[1].toFixed(1)}" r="${h.shape.circle[2].toFixed(1)}"/>`
+      : `<polygon class="hs-shape" points="${h.shape.points.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')}"/>`;
+    return `<g class="hs" data-id="${esc(h.id)}" data-group="${esc(h.group || 'look')}" data-label="${esc(h.label || '')}">${shape}</g>`;
+  });
+  return `<g class="hotspots">${items.join('')}</g>`;
 }
 
 // Фон главного меню: два мира, разделённые диагональю

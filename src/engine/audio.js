@@ -482,6 +482,11 @@ const SFX = {
   sting(a, t) {
     [40, 47, 52].forEach((n) => a.tone(a.sfxBus, { freq: midi(n), type: 'triangle', t, dur: 3, vol: 0.06, attack: 0.02, release: 3, send: 0.8 }));
   },
+  // Осмотр предмета: мягкий короткий звук
+  look(a, t) {
+    a.tone(a.sfxBus, { freq: midi(88), t, dur: 0.6, vol: 0.035, attack: 0.005, send: 0.5 });
+    a.tone(a.sfxBus, { freq: midi(83), t: t + 0.07, dur: 0.6, vol: 0.025, attack: 0.005, send: 0.5 });
+  },
   ui(a, t) {
     a.tone(a.sfxBus, { freq: 1800, t, dur: 0.05, vol: 0.03, attack: 0.001 });
   },

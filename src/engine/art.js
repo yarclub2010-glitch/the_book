@@ -41,6 +41,42 @@ export function box(P, X0, X1, Y0, Y1, d0, d1, cf, ct, cs, H = 200 / 170, extra 
   return out.join('');
 }
 
+// ---------- Формы активных зон (для щелчков) ----------
+
+// Выпуклая оболочка точек
+function hull(list) {
+  const p = [...list].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower = [];
+  for (const q of p) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], q) <= 0) lower.pop();
+    lower.push(q);
+  }
+  const upper = [];
+  for (const q of p.reverse()) {
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], q) <= 0) upper.pop();
+    upper.push(q);
+  }
+  return lower.slice(0, -1).concat(upper.slice(0, -1));
+}
+
+// Зона по «коробке» предмета в метрах: контур всех восьми углов на экране
+export function zoneBox(P, X0, X1, Y0, Y1, d0, d1) {
+  const corners = [];
+  for (const X of [X0, X1]) for (const Y of [Y0, Y1]) for (const d of [d0, d1]) corners.push(P(X, Y, d));
+  return { points: hull(corners) };
+}
+
+// Зона-круг вокруг точки на экране
+export function zoneCircle(p, r) {
+  return { circle: [p[0], p[1], r] };
+}
+
+// Зона по произвольным точкам на экране
+export function zonePoints(list) {
+  return { points: hull(list) };
+}
+
 // Повторяемый генератор случайных чисел: картинка одинакова при каждом запуске
 export function rng(seed) {
   let s = seed >>> 0;

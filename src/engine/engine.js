@@ -45,7 +45,8 @@ export class Game {
     this.auto = false;
     this.skip = false;
     this.skipHeld = false;
-    this.busyLine = false;
+    this.looked = new Map(); // сколько раз осматривали предмет
+    this.hotspotHandlers = {};
     this.applySettings();
     this.bind();
     titleBackdrop($('#title .backdrop'));
@@ -100,12 +101,31 @@ export class Game {
 
     $('#stage').addEventListener('click', (e) => {
       if (e.target.closest('button, input, label, .panel, .quick, .banner, .tray, .screen')) return;
+      // Щелчок по активной зоне — осмотр или загадка; сюжет при этом не листается
+      const hs = e.target.closest('.hs.active');
+      if (hs) {
+        this.onHotspot(hs, e);
+        return;
+      }
       if (this.game.classList.contains('ui-hidden')) {
         this.game.classList.remove('ui-hidden');
         return;
       }
       this.next();
     });
+    // Подпись предмета под указателем
+    $('#stage').addEventListener('pointermove', (e) => {
+      const hs = e.target.closest && e.target.closest('.hs.active');
+      const label = $('#hs-label');
+      if (hs && hs.dataset.label) {
+        const r = $('#stage').getBoundingClientRect();
+        label.textContent = hs.dataset.label;
+        label.style.left = `${e.clientX - r.left}px`;
+        label.style.top = `${e.clientY - r.top}px`;
+        label.classList.add('on');
+      } else label.classList.remove('on');
+    });
+    $('#stage').addEventListener('pointerleave', () => $('#hs-label').classList.remove('on'));
     $('#stage').addEventListener('wheel', (e) => {
       if (e.deltaY < 0 && this.token && !this.panelOpen()) this.openPanel('log');
     });
@@ -501,6 +521,8 @@ export class Game {
     body.innerHTML = html;
     dialog.classList.remove('done');
     dialog.classList.add('on');
+    this.stage.setGroups(['look']);
+    $('#pop').classList.remove('on');
     const letters = [...body.querySelectorAll('i')];
 
     if (this.skipping) {
@@ -528,6 +550,7 @@ export class Game {
     const words = text.length;
     await this.waitNext(this.settings.autoDelay * 1000 + words * 35);
     dialog.classList.remove('done');
+    this.stage.setGroups([]);
   }
 
   async card(title, sub, token) {
@@ -551,6 +574,26 @@ export class Game {
     this.captionTimer = setTimeout(() => el.classList.remove('on'), 2600);
   }
 
+  // ---------- активные зоны ----------
+
+  onHotspot(el, e) {
+    const spot = this.stage.hotspot(el.dataset.id);
+    if (!spot) return;
+    const r = $('#stage').getBoundingClientRect();
+    const at = [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
+    const group = el.dataset.group;
+    if (group === 'look') {
+      // каждый следующий щелчок — следующая мысль; последняя повторяется
+      const key = `${this.stage.scene.id}:${spot.id}`;
+      const n = this.looked.get(key) || 0;
+      this.looked.set(key, n + 1);
+      audio.sfx('look');
+      this.thought(spot.lines[Math.min(n, spot.lines.length - 1)], at);
+    } else if (this.hotspotHandlers[group]) {
+      this.hotspotHandlers[group](spot, at);
+    }
+  }
+
   // ---------- загадки ----------
 
   banner(text, onHint) {
@@ -566,13 +609,27 @@ export class Game {
     el.classList.add('on');
   }
 
-  thought(text) {
+  // at — точка щелчка в долях кадра [x, y]; без неё мысль появляется вверху по центру
+  thought(text, at) {
     const el = $('#pop');
     el.textContent = text;
+    if (at) {
+      const x = Math.min(0.72, Math.max(0.28, at[0]));
+      const y = at[1] < 0.35 ? at[1] + 0.08 : at[1] - 0.06;
+      el.style.left = `${x * 100}%`;
+      el.style.top = `${y * 100}%`;
+      el.classList.toggle('below', at[1] < 0.35);
+    } else {
+      el.style.left = '50%';
+      el.style.top = '22%';
+      el.classList.add('below');
+    }
+    el.classList.remove('on');
+    void el.offsetWidth;
     el.classList.add('on');
     this.log.push({ kind: 'think', name: this.currentHero()?.name || '', world: this.game.dataset.world, text });
     clearTimeout(this.popTimer);
-    this.popTimer = setTimeout(() => el.classList.remove('on'), 3600);
+    this.popTimer = setTimeout(() => el.classList.remove('on'), 2200 + text.length * 45);
   }
 
   tray(n, letters = []) {
@@ -586,15 +643,22 @@ export class Game {
     this.game.classList.add('in-puzzle');
     const ui = {
       banner: (t, h) => this.banner(t, h),
-      thought: (t) => this.thought(t),
+      thought: (t, at) => this.thought(t, at),
       tray: (n, l) => this.tray(n, l),
+      onHotspot: (group, fn) => {
+        if (fn) this.hotspotHandlers[group] = fn;
+        else delete this.hotspotHandlers[group];
+      },
     };
+    this.stage.setGroups(['look', name]);
     if (this.skipping) {
       this.skip = false;
       this.skipHeld = false;
       this.updateModes();
     }
     await this.stage.puzzle(name, ui);
+    this.stage.setGroups([]);
+    this.hotspotHandlers = {};
     await sleep(600);
     $('#tray').classList.remove('on');
     $('#pop').classList.remove('on');

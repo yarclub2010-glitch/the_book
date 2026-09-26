@@ -4,4 +4,6 @@ import { Game } from './engine/engine.js';
 const ready = document.fonts ? document.fonts.ready : Promise.resolve();
 ready.then(() => {
   window.game = new Game();
+  // Для разработки: ?zones — показать активные зоны контурами
+  if (new URLSearchParams(location.search).has('zones')) document.getElementById('game').classList.add('debug-zones');
 });

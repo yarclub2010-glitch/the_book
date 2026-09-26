@@ -23,6 +23,26 @@ const MOVED_NP = { Х: [1.61, 0.4, 14], О: [1.765, 0.5, -12], Д: [1.845, 0.39,
 // Мир П: двойник выложил ровный ряд «УХОДИ»
 const ROW_P = { У: 1.5, Х: 1.61, О: 1.72, Д: 1.83, И: 1.94 };
 
+// Размер буквы на двери холодильника (px) и их расположение — общее для картинки и активных зон
+const LETTER_SIZE = 0.075 * 170 * (4 / (4 - FRIDGE.D));
+
+function letterLayout(world) {
+  return [...ALPHABET].map((ch, i) => {
+    const g = grid(i);
+    const home = P(g.X, g.Y, FRIDGE.D);
+    const l = { ch, home, pos: home, rot: ((i * 37) % 9) - 4, moved: false, color: LETTER_COLORS[i % LETTER_COLORS.length] };
+    if (world === 'np' && MOVED_NP[ch]) {
+      const [mx, my, mr] = MOVED_NP[ch];
+      Object.assign(l, { pos: P(mx, my, FRIDGE.D), rot: mr, moved: true });
+    }
+    if (world === 'p' && ROW_P[ch] !== undefined) {
+      const to = P(ROW_P[ch], 0.43, FRIDGE.D);
+      Object.assign(l, { dx: to[0] - home[0], dy: to[1] - home[1] });
+    }
+    return l;
+  });
+}
+
 const PAL = {
   np: {
     ceil: '#2a1f16', back: '#8a6a44', left: '#6a4f33', right: '#6e5234', base: '#3a2716',
@@ -187,39 +207,23 @@ function build(world) {
   const note = front(1.62, 1.95, 1.4, 1.72, FD);
   s += poly(note, world === 'np' ? '#fff8d8' : '#fff', `transform="rotate(${world === 'np' ? 3 : -3} ${note[0][0]} ${note[0][1]})"`);
   const nt = P(1.64, 1.64, FD);
-  const noteText = world === 'np' ? ['Суп в кастрюле.', 'Буду в 9. Мама'] : ['Тиша, купи хлеб!', '— В.'];
+  const noteText = world === 'np' ? ['Суп в кастрюле.', 'Буду в 9. Мама'] : ['Купи хлеб!!', '— В.'];
   noteText.forEach((t, i) => {
     s += `<text x="${nt[0]}" y="${nt[1] + i * 13}" font-family="Caveat, cursive" font-size="12" fill="#2a2a2a" transform="rotate(${world === 'np' ? 3 : -3} ${note[0][0]} ${note[0][1]})">${t}</text>`;
   });
-  // следы от магнитов там, где буквы висели годами (только в мире НП, где их сдвинули)
-  const fs = 0.075 * 170 * (4 / (4 - FD));
-  let letters = `<g class="letters" font-family="Rubik, 'Arial Black', sans-serif" font-weight="900" font-size="${fs.toFixed(1)}" text-anchor="middle">`;
-  [...ALPHABET].forEach((ch, i) => {
-    const g = grid(i);
-    const color = LETTER_COLORS[i % LETTER_COLORS.length];
-    const home = P(g.X, g.Y, FD);
-    let pos = home;
-    let rot = ((i * 37) % 9) - 4;
-    let moved = false;
-    if (world === 'np' && MOVED_NP[ch]) {
-      const [mx, my, mr] = MOVED_NP[ch];
-      pos = P(mx, my, FD);
-      rot = mr;
-      moved = true;
-      s += `<rect x="${(home[0] - fs * 0.42).toFixed(1)}" y="${(home[1] - fs * 0.85).toFixed(1)}" width="${(fs * 0.84).toFixed(1)}" height="${(fs * 0.95).toFixed(1)}" rx="3" fill="#fffdf6" opacity="0.8" class="mag-trace"/>`;
+  // магнитные буквы; в мире НП на месте сдвинутых остались светлые следы
+  const stroke = world === 'p' ? '#1b1438' : '#2a2018';
+  let letters = `<g class="letters" font-family="Rubik, 'Arial Black', sans-serif" font-weight="900" font-size="${LETTER_SIZE.toFixed(1)}" text-anchor="middle">`;
+  for (const l of letterLayout(world)) {
+    if (l.moved) {
+      s += `<rect x="${(l.home[0] - LETTER_SIZE * 0.42).toFixed(1)}" y="${(l.home[1] - LETTER_SIZE * 0.85).toFixed(1)}" width="${(LETTER_SIZE * 0.84).toFixed(1)}" height="${(LETTER_SIZE * 0.95).toFixed(1)}" rx="3" fill="#fffdf6" opacity="0.8" class="mag-trace"/>`;
     }
-    const stroke = world === 'p' ? '#1b1438' : '#2a2018';
-    let extra = '';
-    if (world === 'p' && ROW_P[ch] !== undefined) {
-      const to = P(ROW_P[ch], 0.43, FD);
-      extra = ` data-dx="${(to[0] - home[0]).toFixed(1)}" data-dy="${(to[1] - home[1]).toFixed(1)}"`;
-    }
-    letters += `<g class="mag${moved ? ' moved' : ''}" data-ch="${ch}" data-x="${pos[0].toFixed(1)}"${extra}>`;
-    letters += `<g transform="translate(${pos[0].toFixed(1)} ${pos[1].toFixed(1)}) rotate(${rot})">`;
-    letters += `<circle class="hit" r="${(fs * 0.75).toFixed(1)}" cy="${(-fs * 0.35).toFixed(1)}" fill="transparent"/>`;
-    letters += `<text fill="${color}" stroke="${stroke}" stroke-width="0.9">${ch}</text>`;
+    const extra = l.dx !== undefined ? ` data-dx="${l.dx.toFixed(1)}" data-dy="${l.dy.toFixed(1)}"` : '';
+    letters += `<g class="mag${l.moved ? ' moved' : ''}" data-ch="${l.ch}"${extra}>`;
+    letters += `<g transform="translate(${l.pos[0].toFixed(1)} ${l.pos[1].toFixed(1)}) rotate(${l.rot})">`;
+    letters += `<text fill="${l.color}" stroke="${stroke}" stroke-width="0.9">${l.ch}</text>`;
     letters += '</g></g>';
-  });
+  }
   s += letters + '</g>';
 
   // ---------- стол и стул ----------
@@ -366,55 +370,117 @@ function scene(world) {
         return order.length * 900 + 900;
       },
     },
+    hotspots: hotspots(world),
     puzzles: world === 'np' ? { letters: lettersPuzzle } : {},
   };
+}
+
+// ---------- Активные зоны ----------
+// Осмотр (group 'look'): мысли героя о предметах — экспозиция мира, сюжет не двигают.
+// Одинаковы в обоих мирах только мысли о фото-якоре: как и сам якорь.
+
+const ANCHOR_LINE = 'Мы с Верой на подоконнике. Окно открыто, на подоконнике её книга.';
+
+const LOOK = {
+  np: {
+    photo: ['Фото', ANCHOR_LINE, 'Помню, что в тот вечер ждали дождя. А он так и не пошёл.', 'Фото будто светится. Или мне кажется.'],
+    clock: ['Часы', 'Спешат на три минуты. Папа говорит: зато никуда не опоздаешь.', 'Раньше их подводила Вера. Теперь некому.'],
+    note: ['Записка', '«Суп в кастрюле. Буду в 9. Мама». Мы давно говорим записками.', 'Мама боится, что я тоже уеду. Поэтому записки короткие — чтобы не сказать лишнего.'],
+    fridge: ['Холодильник', 'Детский алфавит. Мама вешала буквы, чтобы я учил слова.', 'Первое слово, которое я сложил сам, было «ВЕРА».'],
+    kettle: ['Чайник', 'Чайник свистит на одной ноте. Я записал его для бита.', 'Если замедлить в четыре раза, получается почти вой.'],
+    breadbox: ['Хлебница', 'Хлебница. Хлеба нет — зато ключи, батарейки и прищепки.', 'Кто их туда кладёт? Не я. И не мама.'],
+    window: ['Окно', 'Насыпь на уровне крыши. В детстве я думал, что поезда едут по небу.', 'Папа водит электричку. Та, что в 6:40, — его.'],
+    table: ['Стол', 'Одна тарелка. Одна чашка. Раньше тут было тесно.'],
+    plant: ['Цветок', 'Цветок поливает мама. Или никто — он и так живучий.'],
+    doorway: ['Коридор', 'Коридор. Дверь в комнату Веры закрыта шесть лет. Внутри всё как было.'],
+  },
+  p: {
+    photo: ['Фото', ANCHOR_LINE, 'Помню, в ту ночь пошёл дождь. Сильный.', 'Фото будто светится. Или мне кажется.'],
+    clock: ['Часы', 'Точные. Я сам их починил.', 'Всё в этом доме рано или поздно ломается. Я чиню.'],
+    note: ['Записка', '«Купи хлеб!!» — Вера. Два восклицательных — значит, не сердится.', 'Живёт через две улицы, а пишет записки, будто уехала.'],
+    fridge: ['Холодильник', 'Детский алфавит. Сто лет его не трогал.', 'Пусть читает. Кто бы он ни был.'],
+    kettle: ['Чайник', 'Чайник подтекает. Завтра поменяю прокладку.'],
+    breadbox: ['Хлебница', 'Прячу в хлебницу мелочь: ключи, батарейки. Призрак вечно всё утаскивает.'],
+    window: ['Окно', 'Опять дождь. Здесь почти всегда дождь.', 'Папина электричка в 6:40. Её слышно даже сквозь ливень.'],
+    book: ['Книга', 'Книга Веры. «Опыты с водой и светом». Страницы вздулись от воды.', 'Лежит здесь с того самого утра. Никто её не убирает.'],
+    table: ['Стол', 'Три кружки. Вера опять оставила свою — с отбитой ручкой.'],
+    plant: ['Цветок', 'Цветок. Вера говорит, я его перезаливаю.'],
+    doorway: ['Коридор', 'В коридоре свет. Мама не спит — ждёт, когда я лягу.'],
+  },
+};
+
+function hotspots(world) {
+  const { X0: F0, X1: F1, D: FD } = FRIDGE;
+  const [W0, W1, WY0, WY1] = WIN;
+  const zones = {
+    window: A.zoneBox(P, W0, W1, WY0, WY1, 0, 0),
+    clock: A.zoneCircle(P(0.7, 2.28, 0), 32),
+    photo: A.zoneCircle(P(0.9, 1.72, 0.12), 24),
+    note: A.zonePoints(front(1.62, 1.95, 1.4, 1.72, FD)),
+    fridge: A.zoneBox(P, F0, F1, 0, 1.3, FD, FD),
+    kettle: A.zoneCircle([P(-1.72, 0.92, 0.8)[0], P(-1.72, 0.92, 0.8)[1] - 22], 40),
+    breadbox: A.zoneBox(P, XL + 0.05, -1.45, 0.9, 1.1, 1.45, 1.85),
+    table: A.zoneBox(P, -1.02, 0.22, 0.7, 0.9, 1.2, 2.0),
+    plant: A.zoneCircle([P(-1.3, 1.0, 0.07)[0], P(-1.3, 1.0, 0.07)[1] - 32], 30),
+    doorway: A.zonePoints([P(XR, 0, 1.2), P(XR, 2.05, 1.2), P(XR, 2.05, 1.95), P(XR, 0, 1.95)]),
+    book: A.zoneCircle(P(-0.58, 1.03, 0.07), 24),
+  };
+  const list = Object.entries(LOOK[world]).map(([id, [label, ...lines]]) => ({ id, label, lines, shape: zones[id] }));
+  // Буквы — отдельная группа, включается только во время загадки. Идут последними, поэтому лежат поверх зоны холодильника.
+  for (const l of letterLayout(world)) {
+    list.push({
+      id: `L${l.ch}`,
+      ch: l.ch,
+      group: 'letters',
+      label: '',
+      shape: A.zoneCircle([l.pos[0], l.pos[1] - LETTER_SIZE * 0.35], LETTER_SIZE * 0.62),
+    });
+  }
+  return list;
 }
 
 // Загадка «Буквы на холодильнике»: найти сдвинутые буквы
 function lettersPuzzle(root, ui) {
   return new Promise((resolve) => {
-    const need = [...root.querySelectorAll('.mag.moved')];
-    const found = new Set();
+    const layout = letterLayout('np');
+    const need = layout.filter((l) => l.moved);
+    const found = [];
     let misses = 0;
     const wrongLines = [
       'Эта висит, как висела всегда.',
       'Нет, эта на своём месте. Пыль вокруг ровная.',
       'Эту никто не трогал.',
-      '«У» висит ровно. Странно — я был уверен…',
     ];
-    root.classList.add('interactive');
-    ui.banner('Кто-то сдвинул несколько букв. Найдите их.', () => ui.thought('Смотри, какие висят криво. И где на дверце остались светлые следы — там буквы висели годами.'));
+    const hint = 'Смотри, какие висят криво. И где на дверце остались светлые следы — там буквы висели годами.';
+    ui.banner('Кто-то сдвинул несколько букв. Найдите их.', () => ui.thought(hint));
     ui.tray(need.length);
 
-    function onClick(e) {
-      const g = e.target.closest('.mag');
-      if (!g) return;
-      if (g.classList.contains('moved')) {
-        if (found.has(g)) return;
-        found.add(g);
-        g.classList.add('found');
+    ui.onHotspot('letters', (spot, at) => {
+      const l = layout.find((x) => x.ch === spot.ch);
+      if (l.moved) {
+        if (found.includes(l)) return;
+        found.push(l);
+        root.querySelector(`.mag[data-ch="${l.ch}"]`).classList.add('found');
         audio.sfx('pluck');
-        const sorted = [...found].sort((a, b) => a.dataset.x - b.dataset.x).map((x) => x.dataset.ch);
-        ui.tray(need.length, sorted);
-        if (found.size === need.length) {
-          root.removeEventListener('click', onClick);
-          root.classList.remove('interactive');
+        const word = [...found].sort((a, b) => a.pos[0] - b.pos[0]).map((x) => x.ch);
+        ui.tray(need.length, word);
+        if (found.length === need.length) {
+          ui.onHotspot('letters', null);
           audio.sfx('success');
           setTimeout(() => {
             ui.banner(null);
-            resolve(sorted.join(''));
+            resolve(word.join(''));
           }, 1400);
         }
       } else {
         audio.sfx('thud');
-        const text = g.dataset.ch === 'У' ? wrongLines[3] : wrongLines[misses % 3];
         misses++;
-        ui.thought(misses >= 3 && misses % 3 === 0
-          ? 'Смотри, какие висят криво. И где на дверце остались светлые следы.'
-          : text);
+        let text = wrongLines[(misses - 1) % wrongLines.length];
+        if (l.ch === 'У') text = '«У» висит ровно. Странно — я был уверен…';
+        else if (misses % 3 === 0) text = hint;
+        ui.thought(text, at);
       }
-    }
-    root.addEventListener('click', onClick);
+    });
   });
 }
 
