@@ -7,8 +7,18 @@ import { audio } from './audio.js';
 import { Stage, titleBackdrop } from './stage.js';
 import { scenes } from '../scenes/index.js';
 import chapter1 from '../../story/chapters/chapter1.js';
+import chapter2 from '../../story/chapters/chapter2.js';
+import chapter3 from '../../story/chapters/chapter3.js';
+import chapter4 from '../../story/chapters/chapter4.js';
+import chapter5 from '../../story/chapters/chapter5.js';
+import chapter6 from '../../story/chapters/chapter6.js';
+import chapter7 from '../../story/chapters/chapter7.js';
+import chapter8 from '../../story/chapters/chapter8.js';
+import chapter9 from '../../story/chapters/chapter9.js';
+import chapter8x from '../../story/chapters/chapter8x.js';
 
-const CHAPTERS = { [chapter1.id]: chapter1 };
+// Главы по порядку: у каждой может быть next — следующая глава
+const CHAPTERS = Object.fromEntries([chapter1, chapter2, chapter3, chapter4, chapter5, chapter6, chapter7, chapter8, chapter9, chapter8x].map((c) => [c.id, c]));
 const FIRST = chapter1.id;
 
 const $ = (s) => document.querySelector(s);
@@ -38,7 +48,7 @@ const store = {
 };
 
 const DEFAULTS = { music: 0.7, sfx: 0.8, textSpeed: 45, autoDelay: 1.6, captions: true, motion: true };
-const TIME_NAMES = { night: 'ночь', morning: 'утро' };
+const TIME_NAMES = { night: 'ночь', morning: 'утро', evening: 'вечер' };
 
 export class Game {
   constructor() {
@@ -115,6 +125,11 @@ export class Game {
         this.game.classList.remove('ui-hidden');
         return;
       }
+      // открыт осмотр предмета — щелчок закрывает его
+      if ($('#inspect').classList.contains('on')) {
+        this.inspect(null);
+        return;
+      }
       const hs = e.target.closest('.hs.active');
       if (hs) {
         this.onHotspot(hs, e);
@@ -146,13 +161,14 @@ export class Game {
     stageEl.addEventListener('pointerleave', () => $('#hs-label').classList.remove('on'));
     stageEl.addEventListener('wheel', (e) => {
       if (this.panelOpen() || !this.mode) return;
+      // колесо вниз — отойти от предмета; журнал колесом не открывается (только L или кнопкой)
       if (e.deltaY > 0 && this.mode === 'explore' && this.zoomed) this.zoomOut();
-      else if (e.deltaY < 0 && !this.zoomed) this.openPanel('log');
     });
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        if (this.panelOpen()) this.closePanels();
+        if ($('#inspect').classList.contains('on')) this.inspect(null);
+        else if (this.panelOpen()) this.closePanels();
         else if (this.mode === 'explore' && this.zoomed) this.zoomOut();
         else if (this.mode === 'explore' || this.mode === 'beat') this.openPanel('pause');
         return;
@@ -181,8 +197,13 @@ export class Game {
     });
 
     // меню
-    $('#btn-new').addEventListener('click', () => this.startChapter(FIRST));
+    // новая игра — с чистой памятью истории
+    $('#btn-new').addEventListener('click', () => {
+      store.set('legacy', {});
+      this.startChapter(FIRST);
+    });
     $('#btn-continue').addEventListener('click', () => this.load(store.get('auto')));
+    $('#btn-chapters').addEventListener('click', () => $('#chapters').classList.toggle('on'));
     $('#btn-load-title').addEventListener('click', () => this.openPanel('saves', 'load'));
     $('#btn-settings-title').addEventListener('click', () => this.openPanel('settings'));
     $('#btn-about').addEventListener('click', () => this.openPanel('about'));
@@ -210,7 +231,8 @@ export class Game {
 
     // конец главы
     $('#end-title').addEventListener('click', () => this.toTitle());
-    $('#end-again').addEventListener('click', () => this.startChapter(FIRST));
+    $('#end-again').addEventListener('click', () => this.startChapter(this.chapter.id));
+    $('#end-next').addEventListener('click', () => this.startChapter(this.nextId));
 
     $$('.panel .close').forEach((b) => b.addEventListener('click', () => this.closePanels()));
     document.addEventListener('click', (e) => {
@@ -283,6 +305,14 @@ export class Game {
     this.game.classList.add('at-title');
     $('#title').classList.add('on');
     $('#btn-continue').disabled = !store.get('auto');
+    // Главы: открыты те, у которых пройдена предыдущая
+    const order = Object.values(CHAPTERS);
+    // глава открыта, если до неё дошли; ветки (branch) — только если игрок на них вышел
+    const open = order.filter((c, i) => i > 0 && (store.get(`reached:${c.id}`) || (!c.branch && store.get(`done:${order[i - 1].id}`))));
+    $('#btn-chapters').hidden = !open.length;
+    $('#chapters').classList.remove('on');
+    $('#chapters').innerHTML = open.map((c) => `<button type="button" data-ch="${c.id}">${esc(c.title)}</button>`).join('');
+    $('#chapters').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => this.startChapter(b.dataset.ch)));
     if (audio.ready) audio.music('title', { fade: 3 });
   }
 
@@ -395,6 +425,7 @@ export class Game {
     this.hideDialog();
     this.exitPuzzle();
     this.setBack(false);
+    $('#carry').classList.remove('on');
     this.game.classList.remove('exploring', 'in-beat');
     audio.setAmbience([]);
     audio.stopMusic(1.5);
@@ -422,6 +453,8 @@ export class Game {
     this.state = saved
       ? clone(saved.state)
       : { location: ch.start.location, time: ch.start.time, flags: {}, puzzles: {}, looked: {}, fired: {}, elapsed: {}, due: {} };
+    // память истории: решения прошлых глав (доверие между героями, выбранная ветка) — только для чтения
+    if (!this.state.legacy) this.state.legacy = clone(store.get('legacy', {}));
     this.log = saved ? [...(saved.log || [])] : [];
     this.mode = 'beat';
     await this.enterLocation(this.state.location, { transition: 'fade', dur: 1.8 });
@@ -437,6 +470,7 @@ export class Game {
     this.hideDialog();
     this.stage.setGroups(['look']);
     this.renderNav();
+    this.maybeEnterPuzzle();
     this.autosave();
     this.checkRules();
   }
@@ -452,7 +486,7 @@ export class Game {
     this.zoomed = null;
     this.setBack(false);
     const sceneId = this.sceneIdFor(loc);
-    await this.stage.show(sceneId, { shot: 'wide', transition, dur });
+    await this.stage.show(sceneId, { shot: 'wide', transition, dur, classes: this.sceneClassList() });
     this.applySceneState();
     audio.setAmbience(scenes[sceneId].ambience);
     audio.music(L.music(this.state), { fade: 2.5 });
@@ -461,17 +495,30 @@ export class Game {
   }
 
   // Классы состояния на сцене (например, «буквы сдвинуты»)
+  sceneClassList() {
+    return this.chapter && this.chapter.sceneClasses && this.state ? this.chapter.sceneClasses(this.state) : [];
+  }
+
   applySceneState() {
     const root = this.stage.root;
-    if (!root || !this.chapter.sceneClasses) return;
-    root.setAttribute('class', ['scene', ...this.chapter.sceneClasses(this.state)].join(' '));
+    if (!root) return;
+    root.setAttribute('class', ['scene', ...this.sceneClassList()].join(' '));
   }
 
   renderNav() {
     const nav = $('#nav');
-    const locs = this.chapter ? Object.entries(this.chapter.locations) : [];
+    // скрытые места (например, экран телефона) не показываются в панели
+    const locs = this.chapter ? Object.entries(this.chapter.locations).filter(([, L]) => !L.hidden) : [];
     nav.innerHTML = locs.map(([id, L]) => `<button type="button" data-loc="${id}"${id === this.state.location ? ' aria-current="true"' : ''}>${esc(L.name)}</button>`).join('');
     nav.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => this.go(b.dataset.loc)));
+    this.updateCarry();
+  }
+
+  // Что герой держит в руках (глава решает по флажкам: carry(state) → 'книга' или '')
+  updateCarry() {
+    const what = this.state && this.chapter && this.chapter.carry ? this.chapter.carry(this.state) : '';
+    $('#carry').textContent = what ? `В руках: ${what}` : '';
+    $('#carry').classList.toggle('on', !!what);
   }
 
   async go(loc) {
@@ -480,6 +527,7 @@ export class Game {
     this.stage.setGroups([]);
     await this.enterLocation(loc, { transition: 'fade', dur: 1.1 });
     this.stage.setGroups(['look']);
+    this.maybeEnterPuzzle();
     this.autosave();
     this.checkRules();
   }
@@ -518,7 +566,11 @@ export class Game {
     }
 
     const res = (this.chapter.interact && this.chapter.interact(this.stage.scene.id, spot.id, this.state)) || {};
-    if (res.set) Object.assign(this.state.flags, res.set);
+    if (res.set) {
+      Object.assign(this.state.flags, res.set);
+      this.applySceneState();
+      this.updateCarry();
+    }
     if (res.go) {
       this.go(res.go);
       return;
@@ -530,6 +582,9 @@ export class Game {
     const shot = res.shot !== undefined ? res.shot : spot.shot;
     const moving = shot && shot !== this.zoomed;
     if (moving) this.zoomTo(shot);
+    // осмотр: крупная фотография предмета поверх сцены (view — у зоны или в ответе главы)
+    const view = res.view !== undefined ? res.view : spot.view;
+    if (view) this.inspect(view);
     const lines = res.lines || spot.lines;
     if (lines && lines.length) {
       const key = `${this.stage.scene.id}:${spot.id}:${res.key || ''}`;
@@ -557,7 +612,8 @@ export class Game {
     if (this.puzzle || !this.chapter.puzzles) return;
     for (const [name, def] of Object.entries(this.chapter.puzzles)) {
       const ctrl = this.stage.scene.puzzles && this.stage.scene.puzzles[name];
-      if (ctrl && ctrl.shot === this.zoomed && def.when(this.state)) {
+      // загадка с shot: 'wide' начинается сразу, как только игрок пришёл на место
+      if (ctrl && ctrl.shot === (this.zoomed || 'wide') && def.when(this.state)) {
         const progress = (this.state.puzzles[name] = this.state.puzzles[name] || {});
         this.puzzle = { name, ctrl, def, progress };
         this.stage.setGroups(['look', ctrl.group]);
@@ -614,8 +670,10 @@ export class Game {
 
   fire(t) {
     this.state.fired[t.id] = true;
-    if (t.set) Object.assign(this.state.flags, t.set);
+    // set может быть функцией состояния (например, часы: минута + 1)
+    if (t.set) Object.assign(this.state.flags, typeof t.set === 'function' ? t.set(this.state) : t.set);
     if (t.set && this.stage.root) this.applySceneState();
+    if (t.set) this.updateCarry();
     this.background(t.do || []);
     this.checkRules();
   }
@@ -629,7 +687,7 @@ export class Game {
       const opts = (typeof b === 'object' && b) || {};
       if (op === 'sfx') {
         audio.sfx(a, opts);
-        if (opts.caption) this.caption(opts.caption);
+        if (opts.caption) this.caption(opts.caption, opts.long);
       } else if (op === 'event') this.stage.event(a);
       else if (op === 'shake') this.stage.shake(a);
       else if (op === 'wait') await sleep(a * 1000);
@@ -643,8 +701,10 @@ export class Game {
     for (const rule of this.chapter.rules || []) {
       const key = `rule:${rule.id}`;
       if (this.state.fired[key] || !rule.when(this.state)) continue;
-      this.state.fired[key] = true;
-      this.beat(rule.beat);
+      // repeat — правило может срабатывать снова (например, утро, которое повторяется)
+      if (!rule.repeat) this.state.fired[key] = true;
+      // beat может быть функцией состояния — сценка зависит от того, что игрок уже сделал
+      this.beat(typeof rule.beat === 'function' ? rule.beat(this.state) : rule.beat);
       return;
     }
   }
@@ -676,7 +736,7 @@ export class Game {
     switch (op) {
       case 'scene':
         this.hideDialog();
-        await this.stage.show(a, { shot: opts.shot, transition: opts.transition, dur: opts.dur });
+        await this.stage.show(a, { shot: opts.shot, transition: opts.transition, dur: opts.dur, classes: this.sceneClassList() });
         audio.setAmbience(scenes[a].ambience);
         break;
       case 'shot': {
@@ -727,6 +787,8 @@ export class Game {
         break;
       case 'set':
         Object.assign(this.state.flags, a);
+        this.applySceneState();
+        this.updateCarry();
         break;
       case 'time':
         this.state.time = a;
@@ -738,12 +800,60 @@ export class Game {
       case 'end':
         this.endChapter();
         break;
+      case 'choice': {
+        // ['choice', [{ text, do: [команды] }, …]] — выбор игрока, дальше идут команды выбранной ветки
+        const i = await this.choose(a.map((o) => o.text), token);
+        if (this.token !== token) return;
+        for (const c of a[i].do || []) {
+          await this.exec(c, token);
+          if (this.token !== token || this.mode === 'end') return;
+        }
+        break;
+      }
       default:
         console.warn('Неизвестная команда', cmd);
     }
   }
 
+  // Осмотр предмета: src — картинка из assets/items, null — закрыть
+  inspect(src) {
+    const el = $('#inspect');
+    if (!src) {
+      el.classList.remove('on');
+      return;
+    }
+    el.querySelector('img').src = src;
+    el.classList.add('on');
+    audio.sfx('look');
+  }
+
+  // Кнопки выбора; возвращает номер выбранного варианта
+  choose(options, token) {
+    const box = $('#choice');
+    this.hideDialog();
+    box.innerHTML = options.map((t, i) => `<button type="button" data-i="${i}">${esc(t)}</button>`).join('');
+    box.classList.add('on');
+    return new Promise((resolve) => {
+      box.querySelectorAll('button').forEach((b) => b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        box.classList.remove('on');
+        box.innerHTML = '';
+        resolve(Number(b.dataset.i));
+      }));
+      const stop = setInterval(() => {
+        if (this.token !== token) {
+          clearInterval(stop);
+          box.classList.remove('on');
+          resolve(0);
+        }
+      }, 300);
+    });
+  }
+
+  // Чьи мысли: глава может назвать героя явно (hero: 'x') — например, после обмена мирами,
+  // когда Тихон из мира «Приходи» ходит по дому мира «Не приходи»
   currentHero() {
+    if (this.chapter.hero) return this.chapter.chars[this.chapter.hero];
     const world = this.game.dataset.world;
     return Object.values(this.chapter.chars).find((ch) => ch.world === world) || null;
   }
@@ -817,13 +927,15 @@ export class Game {
     await sleep(this.skipping ? 100 : 700);
   }
 
-  caption(text) {
+  // long — важный звук: подпись крупнее и держится дольше
+  caption(text, long = false) {
     if (!this.settings.captions) return;
     const el = $('#caption');
     el.textContent = `[${text}]`;
+    el.classList.toggle('long', long);
     el.classList.add('on');
     clearTimeout(this.captionTimer);
-    this.captionTimer = setTimeout(() => el.classList.remove('on'), 2600);
+    this.captionTimer = setTimeout(() => el.classList.remove('on'), long ? 4200 : 2600);
   }
 
   banner(text, onHint) {
@@ -875,7 +987,26 @@ export class Game {
     this.game.classList.remove('exploring', 'in-beat');
     audio.music('title', { fade: 4 });
     store.set(`done:${this.chapter.id}`, true);
-    $('#end-title-text').textContent = `Конец главы: «${this.chapter.title.replace(/^Глава \d+\. /, '')}»`;
+    // запомнить решения главы — они влияют на следующие главы и на концовку
+    if (this.chapter.remember) {
+      const legacy = { ...store.get('legacy', {}), ...this.chapter.remember(this.state) };
+      store.set('legacy', legacy);
+      this.state.legacy = legacy;
+    }
+    const end = this.chapter.end || {};
+    // следующая глава может зависеть от выбора игрока (развилка)
+    this.nextId = typeof this.chapter.next === 'function' ? this.chapter.next(this.state) : this.chapter.next;
+    const next = this.nextId && CHAPTERS[this.nextId];
+    if (next) store.set(`reached:${this.nextId}`, true);
+    // концовки и эпилоги задают свои надписи (end.kicker, end.title — строка или функция состояния)
+    const pick = (v) => (typeof v === 'function' ? v(this.state) : v);
+    $('#end-kicker').textContent = pick(end.kicker) || `${this.chapter.title.replace(/\. .*/, '')} пройдена`;
+    $('#end-title-text').textContent = pick(end.title) || `Конец главы: «${this.chapter.title.replace(/^Глава \d+\. /, '')}»`;
+    const text = typeof end.text === 'function' ? end.text(this.state) : end.text || [];
+    $('#end-text').innerHTML = text.map(esc).join('<br>');
+    $('#end-muted').textContent = next ? '' : 'Продолжение следует.';
+    $('#end-next').hidden = !next;
+    if (next) $('#end-next').textContent = `Дальше: ${next.title}`;
     $('#end').classList.add('on');
   }
 }

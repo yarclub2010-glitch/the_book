@@ -121,16 +121,61 @@ button { font: inherit; color: inherit; }
   100% { opacity: 0; transform: translateX(900px); }
 }
 
+/* фоны-картинки: утро — та же картинка, светлее и теплее */
+.bg-morning { filter: brightness(1.35) sepia(0.25) saturate(1.1) contrast(0.95); }
+.bg-evening { filter: brightness(1.12) sepia(0.12) saturate(1.05); }
+
+/* Состояние мира на сцене (классы от главы) */
+.note-b, .sill-book, .bg-nobook, .bg-book { display: none; }
+.book-on-sill .bg-book { display: inline; }
+/* мир «Приходи», глава 5: Вера в дверях, открытая хлебница, подсказка в книге */
+.bg-vera, .bg-open, .w-hint, .w-p7, .w-x8, .w-8a, .w-8b, .w-9, .anchor-ne { display: none; }
+.vera-here .bg-vera, .bread-open .bg-open, .w-hint-on .w-hint, .w-p7-on .w-p7,
+.w-x8-on .w-x8, .w-8a-on .w-8a, .w-8b-on .w-8b, .w-9-on .w-9, .ne-written .anchor-ne { display: inline; }
+/* глава 7: записка под ультрафиолетом — проступает «Не» */
+.note-uv, .uv-word { display: none; }
+.uv-on .note-uv { display: inline; }
+.uv-on .note-day { display: none; }
+.uv-on .uv-word { display: inline; animation: reveal 5s ease-out; }
+/* книгу сдвинули в другом мире: на общем плане повёрнута и съехала, на крупном — другой кадр */
+.bg-book-shifted { display: none; }
+.book-on-sill.book-shifted .bg-book { display: none; }
+.book-on-sill.book-shifted .bg-book-shifted { display: inline; }
+.book-shifted .sill-book-pose { transform: translate(10px, 1px) rotate(-9deg); }
+.book-taken .bg-nobook { display: inline; }
+/* УФ-лампа Веры включена (позже по сюжету) */
+.bg-uv { display: none !important; }
+.uv-on .bg-uv:not(.bg-nobook), .uv-on.book-taken .bg-uv.bg-nobook { display: inline !important; }
+/* записи на полях книги (глава 3) */
+.w-pencil, .w-faint, .w-lemon, .w-burn, .w-reply, .w-m2 { display: none; }
+.w-pencil-on .w-pencil, .w-faint-on .w-faint, .w-lemon-on .w-lemon, .w-burn-on .w-burn, .w-reply-on .w-reply, .w-m2-on .w-m2 { display: inline; }
+.w-burn-on .w-lemon { display: none; }
+.w-reply-on .w-reply { animation: reveal 4s ease-out; }
+@keyframes reveal { from { opacity: 0; } }
+.note-shift .note-a { display: none; }
+.note-shift .note-b, .book-on-sill .sill-book { display: inline; }
+.frag.found rect { stroke: #ffcf7a; stroke-width: 4px; }
+.miri-ring { opacity: 0.45; }
+.miri-listen .miri-ring { animation: miri 1.6s ease-in-out infinite; }
+@keyframes miri { 50% { opacity: 1; stroke-width: 4px; } }
+/* бра в коридоре мигает, пока идёт поезд */
+.sconce-off { opacity: 0; }
+.blink-go .sconce-off { animation: sconce-off 5.2s steps(1, end); }
+@keyframes sconce-off { 0% { opacity: 0; } 12% { opacity: 1; } 15% { opacity: 0; } 30% { opacity: 1; } 34% { opacity: 0.3; } 38% { opacity: 1; } 52% { opacity: 0; } 61% { opacity: 1; } 64% { opacity: 0; } 80% { opacity: 0.8; } 83% { opacity: 0; } }
+.blink-go circle.flicker { animation: sconce-glow 5.2s steps(1, end); }
+@keyframes sconce-glow { 0% { opacity: 1; } 12% { opacity: 0; } 15% { opacity: 1; } 30% { opacity: 0; } 34% { opacity: 0.7; } 38% { opacity: 0; } 52% { opacity: 1; } 61% { opacity: 0; } 64% { opacity: 1; } 80% { opacity: 0.2; } 83% { opacity: 1; } }
+/* семафор за окном: ровный красный, иногда ~20 с зелёный (цикл 75 с) */
+.sem-cover, .sem-green { opacity: 0; animation: sem-on 75s steps(1, end) infinite; }
+.sem-red { animation: sem-off 75s steps(1, end) infinite; }
+@keyframes sem-on { 0% { opacity: 0; } 58% { opacity: 1; } 84% { opacity: 0; } }
+@keyframes sem-off { 0% { opacity: 1; } 58% { opacity: 0; } 84% { opacity: 1; } }
 .photoglow { opacity: 0.35; transition: opacity 1.4s ease; }
 .photoglow.on { opacity: 1; }
 .rattle { transform-box: fill-box; transform-origin: 50% 100%; animation: rattle 0.16s ease-in-out infinite alternate; }
 @keyframes rattle { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
-.twin-arm { transform-box: fill-box; transform-origin: 0 50%; transition: transform 1s ease; }
-.twin-arm.reach { transform: rotate(-12deg); }
 
 /* Буквы на холодильнике */
 .mag.found text { stroke: #fff6c9; stroke-width: 2.5px; filter: drop-shadow(0 0 5px #ffcf7a); }
-.mag-trace { opacity: 0.8; }
 
 /* ================= Диалог ================= */
 .dialog {
@@ -240,21 +285,31 @@ button { font: inherit; color: inherit; }
 /* Активные зоны: видимы только при наведении */
 .hs { pointer-events: none; }
 .hs.active { pointer-events: all; cursor: pointer; }
-.hs-shape { fill: transparent; stroke: transparent; stroke-width: 2; transition: stroke 0.2s, fill 0.2s; }
-.hs.active[data-group="look"]:hover .hs-shape { stroke: rgba(255, 244, 214, 0.55); stroke-dasharray: 6 5; fill: rgba(255, 240, 200, 0.05); }
-[data-world="p"] .hs.active[data-group="look"]:hover .hs-shape { stroke: rgba(255, 180, 220, 0.7); }
-.hs.active[data-group="letters"]:hover .hs-shape { stroke: rgba(255, 246, 201, 0.8); }
+/* Наведение: без рамки — предмет будто подсвечен лампой: свет гаснет к краям зоны */
+.hs-shape { fill: transparent; stroke: none; opacity: 0; transition: opacity 0.45s ease; }
+.hs.active[data-group="look"]:hover .hs-shape { fill: url(#hs-glow); opacity: 1; mix-blend-mode: screen; }
+[data-world="p"] .hs.active[data-group="look"]:hover .hs-shape { fill: url(#hs-glow-p); }
+.hs.active[data-group="letters"]:hover .hs-shape,
+.hs.active[data-group="frags"]:hover .hs-shape { fill: url(#hs-glow-hi); opacity: 1; mix-blend-mode: screen; }
+
+/* Подпись предмета: в мире НП — как титр в кино, в мире П — розовая плашка */
 .hs-label {
-  position: absolute; z-index: 6; transform: translate(1.2cqw, 1.2cqw);
-  font-size: 1.05cqw; letter-spacing: 0.06em; text-transform: uppercase;
-  color: #fff; background: rgba(0, 0, 0, 0.6); padding: 0.25cqw 0.7cqw; border-radius: 0.3cqw;
-  opacity: 0; transition: opacity 0.15s; pointer-events: none; white-space: nowrap;
+  position: absolute; z-index: 6; transform: translate(1.4cqw, 1.1cqw);
+  font-family: "Oswald", "Arial Narrow", sans-serif; font-size: 1.1cqw; letter-spacing: 0.16em; text-transform: uppercase;
+  color: #f3dfb8; text-shadow: 0 0 0.6cqw rgba(0, 0, 0, 0.9), 0 0.1cqw 0.2cqw #000;
+  padding: 0.1cqw 0 0.2cqw; border-bottom: 0.08cqw solid rgba(243, 197, 138, 0.6);
+  opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; white-space: nowrap;
 }
-.hs-label.on { opacity: 1; }
+.hs-label.on { opacity: 1; transform: translate(1.4cqw, 0.8cqw); }
+[data-world="p"] .hs-label {
+  font-family: "Unbounded", sans-serif; font-size: 0.95cqw; letter-spacing: 0.05em; font-weight: 600;
+  color: #2a1440; text-shadow: none; background: rgba(255, 170, 210, 0.92);
+  padding: 0.25cqw 0.8cqw; border: 0; border-radius: 999px; box-shadow: 0 0.2cqw 0.8cqw rgba(60, 20, 90, 0.4);
+}
 .no-hover .hs-label { display: none; }
 /* Буквы в мире НП: пока их не сдвинули, видны «на месте»; сдвинутые и следы — после (закон 3) */
-.mag.moved, .mag-trace { display: none; }
-.letters-moved .mag.moved, .letters-moved .mag-trace { display: inline; }
+.mag.moved { display: none; }
+.letters-moved .mag.moved { display: inline; }
 .letters-moved .mag.at-home { display: none; }
 
 /* Панель мест: свободно ходить между комнатами */
@@ -291,8 +346,31 @@ button { font: inherit; color: inherit; }
 }
 .hint.on { opacity: 1; }
 
+/* Выбор игрока: две-три строки, как реплики героя */
+.choice {
+  position: absolute; left: 50%; bottom: 14%; transform: translateX(-50%); z-index: 7;
+  display: flex; flex-direction: column; gap: 0.7cqw; min-width: 30%;
+  opacity: 0; pointer-events: none; transition: opacity 0.4s;
+}
+.choice.on { opacity: 1; pointer-events: auto; }
+.choice button {
+  font-family: "Oswald", sans-serif; font-size: 1.6cqw; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #f3dfb8; background: rgba(0, 0, 0, 0.6); border: 0; border-bottom: 0.1cqw solid rgba(243, 197, 138, 0.5);
+  padding: 0.7cqw 2cqw; cursor: pointer; transition: background 0.3s, color 0.3s;
+}
+.choice button:hover { background: rgba(243, 181, 63, 0.25); color: #fff; }
+
+/* Что герой держит в руках */
+.carry {
+  position: absolute; left: 1.2cqw; bottom: 3.6cqw; z-index: 4;
+  font-size: 1cqw; letter-spacing: 0.05em; padding: 0.35cqw 0.9cqw; border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55); color: #f3c58a; border: 0.1cqw solid rgba(243, 197, 138, 0.5);
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.exploring .carry.on { opacity: 1; }
+
 /* Режим разработчика (?zones): все зоны видны */
-.debug-zones .hs .hs-shape { stroke: rgba(0, 255, 255, 0.8); stroke-dasharray: 4 3; fill: rgba(0, 255, 255, 0.08); }
+.debug-zones .hs .hs-shape { opacity: 1; stroke: rgba(0, 255, 255, 0.8); stroke-dasharray: 4 3; fill: rgba(0, 255, 255, 0.08); }
 .debug-zones .hs[data-group="letters"] .hs-shape { stroke: rgba(255, 0, 200, 0.8); }
 .tray {
   position: absolute; top: 14%; right: 4%;
@@ -303,7 +381,7 @@ button { font: inherit; color: inherit; }
 .tray.on { opacity: 1; }
 .tray .dots { font-family: "Rubik", sans-serif; font-weight: 900; font-size: 3cqw; color: rgba(255, 255, 255, 0.5); }
 .tray .slot {
-  width: 3.6cqw; height: 4.2cqw; display: grid; place-items: center;
+  min-width: 3.6cqw; width: auto; padding: 0 0.3cqw; height: 4.2cqw; display: grid; place-items: center; white-space: nowrap;
   border-bottom: 0.3cqw solid rgba(255, 255, 255, 0.6);
   font-family: "Rubik", sans-serif; font-weight: 900; font-size: 3cqw; color: #fff;
 }
@@ -332,7 +410,8 @@ button { font: inherit; color: inherit; }
 .screen.on { opacity: 1; pointer-events: auto; }
 
 .title .backdrop { position: absolute; inset: 0; }
-.backdrop-half { position: absolute; inset: 0; }
+.backdrop-half { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease; }
+.backdrop-half.ready { opacity: 1; }
 .backdrop-half svg { width: 100%; height: 100%; display: block; animation: drift 30s ease-in-out infinite alternate; }
 .backdrop-half.np { clip-path: polygon(0 0, 64% 0, 40% 100%, 0 100%); }
 .backdrop-half.p { clip-path: polygon(64% 0, 100% 0, 100% 100%, 40% 100%); }
@@ -437,3 +516,18 @@ button:focus-visible { outline: 0.2cqw solid var(--accent); outline-offset: 0.2c
 @media (prefers-reduced-motion: reduce) {
   .layer svg, .backdrop-half svg, .grain, .dust, .sway, .seam { animation: none !important; }
 }
+
+/* Главное меню: список открытых глав раскрывается под кнопкой «Главы» */
+.chapters { display: none; flex-direction: column; gap: 0.3cqw; margin: -0.2cqw 0 0.4cqw 1.2cqw; }
+.chapters.on { display: flex; }
+.chapters button { font-size: 1.15cqw !important; opacity: 0.85; }
+
+/* Осмотр предмета: фотография крупно, сцена за ней затемнена; мысль героя видна поверх */
+.inspect {
+  position: absolute; inset: 0; z-index: 5; display: grid; place-items: center;
+  background: rgba(0, 0, 0, 0.72); opacity: 0; pointer-events: none; transition: opacity 0.35s;
+}
+.inspect.on { opacity: 1; pointer-events: auto; cursor: zoom-out; }
+.inspect img { width: 78%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 0.4cqw; box-shadow: 0 1cqw 4cqw rgba(0, 0, 0, 0.8); transform: scale(0.96); transition: transform 0.35s; }
+.inspect.on img { transform: scale(1); }
+.pop { z-index: 6; }

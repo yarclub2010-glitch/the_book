@@ -1,0 +1,93 @@
+/* «Жизнь» сцен (src/scenes/ambient.js): капли, дождь за стеклом, пыль в свете, пар, мерцание, занавеска.
+   Только transform и opacity. Выключается классом .no-motion на #game и prefers-reduced-motion. */
+
+.ambient, .ambient * { pointer-events: none; }
+
+/* пылинка: проявляется, плывёт, гаснет */
+.amb-mote { animation: amb-mote var(--t, 14s) ease-in-out infinite; }
+@keyframes amb-mote {
+  0% { transform: translate(0, 0); opacity: 0; }
+  20%, 80% { opacity: var(--o, 0.5); }
+  100% { transform: translate(var(--dx, 20px), var(--dy, -30px)); opacity: 0; }
+}
+
+/* капля на стекле: стоит, срывается, замирает, ползёт дальше и пропадает */
+.amb-drop { animation: amb-trickle var(--t, 10s) linear infinite; }
+@keyframes amb-trickle {
+  0% { transform: translateY(0); opacity: 0; }
+  6% { transform: translateY(0); opacity: 1; }
+  30% { transform: translateY(0); }
+  36% { transform: translateY(calc(var(--d, 100px) * 0.3)); }
+  55% { transform: translateY(calc(var(--d, 100px) * 0.36)); }
+  62% { transform: translateY(calc(var(--d, 100px) * 0.8)); }
+  85% { transform: translateY(var(--d, 100px)); opacity: 1; }
+  100% { transform: translateY(var(--d, 100px)); opacity: 0; }
+}
+
+/* дождь за стеклом */
+.amb-streak { animation: amb-streak var(--t, 0.9s) linear infinite; }
+@keyframes amb-streak {
+  from { transform: translate(0, 0); }
+  to { transform: translate(var(--sx, 0px), var(--d, 200px)); }
+}
+
+/* мягкий свет «дышит» */
+.amb-pulse { animation: amb-pulse var(--t, 6s) ease-in-out infinite alternate; }
+@keyframes amb-pulse {
+  from { opacity: var(--lo, 0.2); }
+  to { opacity: var(--hi, 0.5); }
+}
+
+/* неровное дрожание лампы / экрана */
+.amb-flick { animation: amb-flick 4.3s linear infinite; }
+@keyframes amb-flick {
+  0%, 100% { opacity: var(--hi, 0.5); }
+  18% { opacity: var(--lo, 0.3); }
+  21% { opacity: var(--hi, 0.5); }
+  46% { opacity: var(--hi, 0.5); }
+  48% { opacity: var(--lo, 0.3); }
+  52% { opacity: var(--hi, 0.5); }
+  77% { opacity: var(--lo, 0.3); }
+}
+
+/* пар над кружкой, дымок над паяльником */
+.amb-steam {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: amb-steam var(--t, 5s) ease-out infinite;
+}
+@keyframes amb-steam {
+  0% { transform: translateY(6px) scale(0.7, 0.5); opacity: 0; }
+  30% { opacity: 0.15; }
+  100% { transform: translateY(-26px) scale(1.25, 1.2); opacity: 0; }
+}
+
+/* занавеска: чуть перекашивается от карниза */
+.amb-sway { animation: amb-sway 9s ease-in-out infinite alternate; }
+@keyframes amb-sway {
+  from { transform: skewX(-0.35deg); }
+  to { transform: skewX(0.45deg); }
+}
+
+/* отсвет, пробегающий по бумаге в ультрафиолете */
+.amb-sheen { animation: amb-sheen 7s ease-in-out infinite; }
+@keyframes amb-sheen {
+  0% { transform: translateX(var(--from, -300px)); opacity: 0; }
+  15% { opacity: 1; }
+  70% { transform: translateX(var(--to, 300px)); opacity: 0; }
+  100% { transform: translateX(var(--to, 300px)); opacity: 0; }
+}
+
+/* УФ-эффекты видны только при включённой лампе */
+.amb-uv { display: none; }
+.uv-on .amb-uv { display: inline; }
+
+/* Без движения: всё замирает; то, что без движения бессмысленно, прячется */
+.no-motion .ambient, .no-motion .ambient * { animation: none !important; }
+.no-motion .amb-streak, .no-motion .amb-steam, .no-motion .amb-sheen, .no-motion .amb-mote { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient, .ambient * { animation: none !important; }
+  .amb-streak, .amb-steam, .amb-sheen, .amb-mote { display: none; }
+}

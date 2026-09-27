@@ -125,6 +125,33 @@ export function tiles(P, { XL = -2, XR = 2.235, a, b, grout, step = 0.3, depth =
   return s + '</g>';
 }
 
+// Фон-картинка (кадр из генератора). Картинка растягивается на сцену 1600×900 «с обрезкой»,
+// как background-size: cover. I(px, py) переводит пиксели картинки в координаты сцены —
+// по ним размечаются зоны, ракурсы и то, что рисуется поверх.
+export function plate(src, iw, ih, W = 1600, H = 900) {
+  const k = Math.max(W / iw, H / ih);
+  const ox = (W - iw * k) / 2;
+  const oy = (H - ih * k) / 2;
+  const I = (px, py) => [ox + px * k, oy + py * k];
+  return {
+    src,
+    k,
+    I,
+    image: (extra = '') => `<image href="${src}" x="${n(ox)}" y="${n(oy)}" width="${n(iw * k)}" height="${n(ih * k)}" preserveAspectRatio="none" ${extra}/>`,
+    // прямоугольник в пикселях картинки → зона
+    rect: (x0, y0, x1, y1) => ({ points: [I(x0, y0), I(x1, y0), I(x1, y1), I(x0, y1)] }),
+    poly: (list) => ({ points: hull(list.map(([x, y]) => I(x, y))) }),
+    circle: (x, y, r) => ({ circle: [...I(x, y), r * k] }),
+    // ракурс 16:9 с центром (cx, cy) и шириной w в пикселях картинки
+    shot: (cx, cy, w) => {
+      const [x, y] = I(cx, cy);
+      const ww = w * k;
+      const hh = (ww * 9) / 16;
+      return [n(x - ww / 2), n(y - hh / 2), n(ww), n(hh)];
+    },
+  };
+}
+
 // Фото-якорь: одинаково в обоих мирах — настоящая фотография, без стилизации
 export function anchorPhoto(cx, cy, w, extra = '') {
   const h = w * 1.15;

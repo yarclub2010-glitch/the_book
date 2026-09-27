@@ -1,0 +1,153 @@
+// Коридор, мир «Не приходи» (H-NP-1): вешалка, валенки, дверь Веры в конце, дверь Тихона справа.
+// И мастерская двойника в мире «Приходи» (R-P-1) — для сценок.
+import * as A from '../engine/art.js';
+
+const H = A.plate('assets/backgrounds/H-NP-1.jpg', 1376, 768);
+const H_OFF = A.plate('assets/backgrounds/H-NP-1-off.jpg', 1376, 768);
+const RP = A.plate('assets/backgrounds/R-P-1.jpg', 1376, 768);
+
+function buildHall(time) {
+  const [x, y] = H.I(905, 172);
+  let s = `<defs><radialGradient id="hl-warm"><stop offset="0" stop-color="#ffc26b" stop-opacity="0.3"/><stop offset="1" stop-color="#ffc26b" stop-opacity="0"/></radialGradient></defs>`;
+  s += H.image(`class="bg bg-${time}"`);
+  // бра: когда идёт поезд, мигает. Погасшее бра — отдельный кадр того же коридора (H-NP-1-off):
+  // вместе с лампой пропадает и отсвет на стене. Кадр проступает поверх в моменты «провала».
+  s += `<g id="hl-sconce"><circle class="flicker" cx="${x}" cy="${y}" r="320" fill="url(#hl-warm)" style="mix-blend-mode:screen"/>`;
+  s += `${H_OFF.image(`class="sconce-off bg-${time}"`)}</g>`;
+  return s;
+}
+
+const LOOK = {
+  coats: ['Вешалка', 'coats', ['Моя парка, папин бушлат. Маминого плаща нет — значит, она на смене.', 'С краю — Верина старая куртка. Шесть лет висит. Никто её не надевает и не убирает.']],
+  hats: ['Шапки', 'coats', ['На полке шапки всей семьи. Верина — с помпоном. Помпон я когда-то оторвал, мама пришила обратно.']],
+  boots: ['Валенки', 'floor', ['Папины валенки для зимних рейсов. Пахнут креозотом и снегом.']],
+  shoes: ['Ботинки', 'floor', ['Мои ботинки. Всегда посреди прохода — так говорит мама.']],
+  sconce: ['Бра', 'door', ['Бра мигает каждый раз, когда идёт поезд. Папа обещал починить — третий год.']],
+  radiator: ['Батарея', 'door', ['Батарея в коридоре греет лучше всех. Вера сушила тут кеды.']],
+  corridor: ['Кухня', '', []],
+  vera: ['Дверь Веры', '', []],
+  mine: ['Моя дверь', '', []],
+};
+
+function hallHotspots() {
+  const zones = {
+    corridor: H.rect(540, 140, 650, 570),
+    coats: H.rect(120, 110, 520, 680),
+    hats: H.rect(180, 0, 470, 150),
+    boots: H.rect(380, 565, 516, 712),
+    shoes: H.rect(330, 690, 470, 768),
+    vera: H.rect(680, 35, 865, 590),
+    radiator: H.rect(888, 450, 958, 620),
+    sconce: H.circle(905, 172, 34),
+    mine: H.rect(1025, 0, 1148, 768),
+  };
+  return Object.entries(zones).map(([id, shape]) => {
+    const [label, shot, lines] = LOOK[id];
+    return { id, label, shot, shape, lines };
+  });
+}
+
+function hall(time) {
+  return {
+    id: `hall-np-${time}`,
+    world: 'np',
+    title: 'Коридор',
+    bg: H.src,
+    extra: [H_OFF.src],
+    shots: {
+      wide: [0, 0, 1600, 900],
+      coats: H.shot(320, 330, 620),
+      floor: H.shot(420, 640, 560),
+      door: H.shot(820, 300, 560),
+    },
+    ambience: ['room', 'clock'],
+    build: () => buildHall(time),
+    hotspots: hallHotspots(),
+    events: {
+      train(root) {
+        const el = root.querySelector('#hl-sconce');
+        el.classList.remove('blink-go');
+        void el.getBBox();
+        el.classList.add('blink-go');
+        setTimeout(() => el.classList.remove('blink-go'), 5200);
+        return 5200;
+      },
+    },
+  };
+}
+
+export const hallNight = hall('night');
+export const hallEvening = hall('evening');
+
+// Мастерская двойника (мир «Приходи»): паяльник, лупа, доска с уликами
+const LOOK_RP = {
+  window: ['Окно', 'window', ['Та же насыпь, та же электричка. Только здесь идёт дождь.']],
+  pegboard: ['Инструменты', 'desk', ['Перфопанель с инструментами. Всё по размеру, всё на своём гвозде.', 'У меня так никогда не было.']],
+  lamp: ['Лупа', 'desk', ['Лампа-лупа. Он чинит что-то мелкое. Часто.']],
+  solder: ['Паяльник', 'desk', ['Паяльник. Жало в нагаре. Вот чем он выжигал буквы в книге.']],
+  headphones: ['Наушники', 'desk', ['Разобранные наушники. Большие, мужские — не Верины.', 'Его собственные. Чужое он чинит сразу, своё — когда-нибудь.']],
+  board: ['Доска', 'board', ['Доска с «уликами» против призрака. Чашки, буквы, скрип по ночам.', '«Хлебница!!!» — обведено три раза. Это не я. Это у нас мама её разбирает.']],
+  shelves: ['Полки', 'board', ['Коробочки с винтиками, провода, старый радиоприёмник.', 'Он ничего не выбрасывает. Как Вера — у нас.']],
+  bed: ['Кровать', 'bed', ['Его кровать. Не заправлена. Плед в клетку — такой же был у меня в детстве.']],
+  chair: ['Стул', 'desk', ['На спинке — серое худи в пятнах от припоя. Моё было бы чёрным.']],
+  drawer: ['Ящик стола', 'desk', ['Ящик стола. Заперт? Нет — просто тугой.']],
+};
+
+export const roomP = {
+  id: 'room-p',
+  world: 'p',
+  title: 'Комната',
+  bg: RP.src,
+  shots: {
+    wide: [0, 0, 1600, 900],
+    desk: RP.shot(390, 540, 720),
+    board: RP.shot(740, 250, 520),
+    window: RP.shot(320, 200, 640),
+    bed: RP.shot(1100, 480, 620),
+  },
+  ambience: ['rain'],
+  build: () => RP.image('class="bg"'),
+  hotspots: Object.entries({
+    window: RP.rect(0, 0, 620, 410),
+    bed: RP.rect(820, 320, 1376, 700),
+    shelves: RP.rect(1030, 30, 1376, 270),
+    board: RP.rect(640, 130, 850, 370),
+    pegboard: RP.rect(0, 320, 180, 590),
+    chair: RP.rect(650, 570, 790, 768),
+    lamp: RP.rect(185, 405, 325, 495),
+    solder: RP.rect(330, 440, 525, 520),
+    headphones: RP.rect(330, 525, 505, 625),
+    drawer: RP.rect(590, 590, 760, 700),
+  }).map(([id, shape]) => {
+    const [label, shot, lines] = LOOK_RP[id];
+    return { id, label, shot, shape, lines, view: id === 'board' ? 'assets/items/I-BOARD-P.jpg' : undefined };
+  }),
+  events: {},
+};
+
+// Коридор мира «Приходи» (H-P-1): вешалка, открытая дверь Веры со светом.
+// Вера стоит в дверях — отдельный кадр того же коридора (H-P-1-vera), класс vera-here.
+const HP = A.plate('assets/backgrounds/H-P-1.jpg', 1376, 768);
+const HP_VERA = A.plate('assets/backgrounds/H-P-1-vera.jpg', 1376, 768);
+export const hallP = {
+  id: 'hall-p',
+  world: 'p',
+  title: 'Коридор',
+  bg: HP.src,
+  extra: [HP_VERA.src],
+  shots: {
+    wide: [0, 0, 1600, 900],
+    coats: HP.shot(260, 300, 560),
+    door: HP.shot(900, 400, 600),
+  },
+  ambience: ['rain'],
+  build: () => HP.image('class="bg"') + HP_VERA.image('class="bg-vera"'),
+  hotspots: [
+    { id: 'corridor', label: 'Кухня', shot: '', shape: HP.rect(500, 230, 700, 500), lines: [] },
+    { id: 'coats', label: 'Вешалка', shot: 'coats', shape: HP.rect(110, 20, 410, 570), lines: ['Куртки, шарфы, Верин жёлтый дождевик. Здесь всё время кто-то приходит и уходит.', 'У нас вешалка полупустая.'] },
+    { id: 'shoes', label: 'Обувь', shot: 'coats', shape: HP.rect(100, 560, 520, 768), lines: ['Мокрые белые кеды. Его. Он, похоже, вообще не сушит обувь.'] },
+    { id: 'window', label: 'Окно', shot: '', shape: HP.rect(1140, 0, 1376, 500), lines: ['Дождь. В каждой капле — по фонарю с насыпи.'] },
+    { id: 'vera', label: 'Вера', shot: 'door', shape: HP.rect(760, 180, 1060, 720), lines: [] },
+  ],
+  events: {},
+};

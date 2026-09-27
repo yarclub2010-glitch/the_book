@@ -1,11 +1,24 @@
 // Сцена: слои с картинкой, камера (ракурсы), переходы и эффекты.
 
 import { scenes } from '../scenes/index.js';
+import { ambientFor } from '../scenes/ambient.js';
 
 const W = 1600;
 const H = 900;
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Фоны-картинки грузятся заранее: сцена появляется, только когда картинка готова
+const images = new Map();
+export function preload(src) {
+  if (!src) return Promise.resolve();
+  if (!images.has(src)) {
+    const img = new Image();
+    img.src = src;
+    images.set(src, img.decode().catch(() => {}));
+  }
+  return images.get(src);
+}
 
 export class Stage {
   constructor(view, fader, game) {
@@ -18,6 +31,10 @@ export class Stage {
     this.anim = null;
     this.cache = new Map();
     this.speed = 1; // во время пропуска всё ускоряется
+    // Все картинки всех сцен (фон, фото-якорь, кадры «без книги», погасшее бра…) грузятся заранее
+    Object.keys(scenes).forEach((id) => this.images(id).forEach(preload));
+    // и фотографии предметов для осмотра
+    Object.values(scenes).forEach((sc) => (sc.hotspots || []).forEach((h) => h.view && preload(h.view)));
   }
 
   get root() {
@@ -31,9 +48,15 @@ export class Stage {
   markup(id) {
     if (!this.cache.has(id)) {
       const def = scenes[id];
-      this.cache.set(id, `<g class="art" pointer-events="none">${def.build()}</g>${hotspotsMarkup(def.hotspots || [])}`);
+      // ambientFor — «жизнь» сцены: дождь на стёклах, пыль в луче, пар, колыхание штор
+      this.cache.set(id, `<g class="art" pointer-events="none">${def.build()}${ambientFor(id)}</g>${hotspotsMarkup(def.hotspots || [])}`);
     }
     return this.cache.get(id);
+  }
+
+  // Адреса всех картинок сцены — из её разметки
+  images(id) {
+    return [...new Set([...this.markup(id).matchAll(/<image[^>]*href="([^"]+)"/g)].map((m) => m[1]))];
   }
 
   makeLayer(id) {
@@ -86,12 +109,16 @@ export class Stage {
   }
 
   // Показать сцену: transition — cut | fade | cross | morph
-  async show(id, { shot = 'wide', transition = 'fade', dur = 1.4 } = {}) {
+  // classes — состояние мира на сцене (надписи, сдвинутые буквы…): ставится до показа, без мелькания
+  async show(id, { shot = 'wide', transition = 'fade', dur = 1.4, classes = [] } = {}) {
     const def = scenes[id];
     if (!def) throw new Error(`Нет сцены ${id}`);
     const ms = (dur * 1000) / this.speed;
+    // сцена появляется целиком — фон и всё, что поверх; не дольше 4 секунд, если что-то не грузится
+    await Promise.race([Promise.all(this.images(id).map(preload)), sleep(4000)]);
     const old = this.layer;
     const layer = this.makeLayer(id);
+    layer.querySelector('svg').setAttribute('class', ['scene', ...classes].join(' '));
 
     if (transition === 'fade' && old) {
       this.fader.style.transitionDuration = `${ms / 2}ms`;
@@ -101,6 +128,8 @@ export class Stage {
 
     layer.classList.add(transition === 'cross' || transition === 'morph' ? `enter-${transition}` : 'enter');
     this.view.appendChild(layer);
+    // картинки внутри SVG декодируются отдельно — дождаться, пока слой скрыт
+    await Promise.race([Promise.all([...layer.querySelectorAll('image')].map((img) => (img.decode ? img.decode().catch(() => {}) : null))), sleep(1500)]);
     this.layer = layer;
     this.scene = def;
     this.game.dataset.world = def.world;
@@ -214,7 +243,10 @@ function hotspotsMarkup(list) {
       : `<polygon class="hs-shape" points="${h.shape.points.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')}"/>`;
     return `<g class="hs" data-id="${esc(h.id)}" data-group="${esc(h.group || 'look')}" data-label="${esc(h.label || '')}">${shape}</g>`;
   });
-  return `<g class="hotspots">${items.join('')}</g>`;
+  // мягкое свечение вместо рамки: к краям зоны свет гаснет до нуля
+  const glow = (id, c) => `<radialGradient id="${id}" cx="50%" cy="50%" r="55%"><stop offset="0" stop-color="${c}" stop-opacity="0.75"/><stop offset="0.55" stop-color="${c}" stop-opacity="0.3"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`;
+  const defs = `<defs>${glow('hs-glow', '#ffd89a')}${glow('hs-glow-p', '#ff9fd0')}${glow('hs-glow-hi', '#fff2c8')}</defs>`;
+  return `<g class="hotspots">${defs}${items.join('')}</g>`;
 }
 
 // Фон главного меню: два мира, разделённые диагональю
@@ -224,6 +256,12 @@ export function titleBackdrop(el) {
   a.innerHTML = `<svg viewBox="200 60 1300 731" preserveAspectRatio="xMidYMid slice">${scenes['room-np-night'].build()}</svg>`;
   const b = document.createElement('div');
   b.className = 'backdrop-half p';
-  b.innerHTML = `<svg viewBox="150 40 1350 759" preserveAspectRatio="xMidYMid slice">${scenes['kitchen-p'].build()}</svg>`;
+  b.innerHTML = `<svg viewBox="150 40 1350 759" preserveAspectRatio="xMidYMid slice">${scenes['kitchen-p-evening'].build()}</svg>`;
+  b.querySelectorAll('.letters').forEach((g) => g.remove()); // не подсказывать загадку до игры
   el.append(a, b);
+  // каждая половина проявляется, когда её картинки готовы
+  [a, b].forEach((half) => {
+    const imgs = [...half.querySelectorAll('image')];
+    Promise.race([Promise.all(imgs.map((i) => (i.decode ? i.decode().catch(() => {}) : null))), sleep(4000)]).then(() => half.classList.add('ready'));
+  });
 }

@@ -17,6 +17,13 @@ const night = (s) => s.time === 'night';
 export default {
   id: 'ch1',
   title: 'Глава 1. Буквы',
+  next: 'ch2',
+  end: {
+    text: [
+      'Тихон прочёл «…ХОДИ» как «приходи». Ночью он пойдёт на зов.',
+      'А в том же доме, на той же кухне, кто-то ждёт утра — проверить, ушёл ли «призрак».',
+    ],
+  },
   chars: {
     t: { name: 'Тихон', world: 'np' },
     x: { name: '???', world: 'p' },
@@ -42,9 +49,9 @@ export default {
 
   intro: [
     ['card', 'Нижние Броды', '01:46 · мир «Не приходи»'],
-    ['say', 't', 'Три недели. Каждую ночь одно и то же.'],
-    ['think', 'Скрип. Тишина. Снова скрип. Как будто в доме живёт кто-то ещё.'],
-    ['hint', 'Щёлкайте по предметам — так вы узнаете историю. Другая комната — внизу слева.'],
+    ['say', 't', 'Двадцать первая ночь. И опять.'],
+    ['think', 'Скрип. Пауза. Скрип. Ровно, как по метроному. Старый дом так не скрипит. Так ходят.'],
+    ['hint', 'Щёлкайте по предметам — из них складывается история. Другие места — внизу слева.'],
   ],
 
   interact(scene, id, s) {
@@ -53,37 +60,37 @@ export default {
     if (inKitchen && id === 'doorway') return { go: 'room' };
 
     if (inKitchen && id === 'fridge') {
-      if (s.flags.solved) return { shot: 'letters', key: 'solved', lines: ['…ХОДИ. Кто-то зовёт меня.'] };
+      if (s.flags.solved) return { shot: 'letters', key: 'solved', lines: ['…ХОДИ. Четыре буквы. Начала нет.'] };
       if (s.flags.lettersMoved) {
-        return { shot: 'letters', key: 'moved', set: { sawLetters: true }, lines: ['Буквы… Их кто-то двигал. Не упали — сдвинуты.'] };
+        return { shot: 'letters', key: 'moved', set: { sawLetters: true }, lines: ['Буквы не упали. Сдвинуты — чуть-чуть. Как фальшивая нота: слышишь сразу, а найти не можешь.'] };
       }
       return null;
     }
 
     if (id === 'bed' && night(s)) {
-      if (!s.flags.lettersMoved) return { key: 'early', lines: ['Рано. Опять будет скрип.', 'Всё равно не усну.'] };
+      if (!s.flags.lettersMoved) return { key: 'early', lines: ['Лечь? Через минуту опять заскрипит.', 'Не усну. Диктофон мигает — пусть он и не спит за меня.'] };
       return {
         beat: [
-          ['say', 't', 'Щелчки на кухне. Шёпот. Ладно. Утром разберусь.'],
+          ['say', 't', 'Щелчки. Шёпот. Ладно. При свете разберусь.'],
           ['music', null, { fade: 2 }],
           ['time', 'morning'],
           ['go', 'room', { transition: 'fade', dur: 3 }],
           ['card', '6:39', 'Утро'],
-          ['thought', 'Утро. Всё выглядит проще. Почти.'],
+          ['thought', 'Утром всё проще. Туман с реки, насыпь висит над крышами. Почти не страшно.'],
         ],
       };
     }
-    if (id === 'bed') return { key: 'morning', lines: ['Уже утро. Спать всё равно не выйдет.'] };
+    if (id === 'bed') return { key: 'morning', lines: ['Досыпать смысла нет. В 6:40 всё равно разбудят.'] };
 
     if (id === 'recorder' && !night(s) && s.flags.lettersMoved) {
       return {
         key: 'record',
         set: { heardRecording: true },
-        lines: ['Слушаю запись. Три часа тишины — и в 01:50 шёпот: «…ходи…».', 'Тот же голос, что ночью. Или мой собственный — только очень далеко.'],
+        lines: ['Мотаю запись. Холодильник, товарный, тишина — и в 01:50 шёпот: «…ходи…».', 'Голос знакомый. Как свой в записи: вроде ты, а вроде чужой.'],
       };
     }
     if (id === 'laptop' && s.flags.lettersMoved) {
-      return { key: 'moved', lines: ['Щелчки и шёпот записались. Если усилить… «…ходи…». Не показалось.'] };
+      return { key: 'moved', lines: ['Кидаю запись в редактор. Четыре щелчка, стук, пауза. Потом шёпот: «…ходи…». Не показалось.', 'Перед «ходи» — вдох и дыра. Будто первый слог срезали.'] };
     }
     return null;
   },
@@ -93,12 +100,12 @@ export default {
   },
 
   timers: [
-    { id: 'creak', every: [35, 65], when: night, do: [['sfx', 'creak', { caption: 'скрипит половица' }]] },
+    { id: 'creak', every: [35, 65], when: night, do: [['sfx', 'creak', { caption: 'где-то в доме скрипит половица' }]] },
     {
       id: 'freight',
-      every: [80, 120],
+      every: [35, 60],
       when: night,
-      do: [['sfx', 'train', { caption: 'идёт товарный поезд', dur: 5 }], ['event', 'train'], ['shake', 4], ['sfx', 'clink']],
+      do: [['sfx', 'train', { caption: 'идёт товарный поезд', dur: 5 }], ['event', 'train'], ['shake', 2], ['sfx', 'clink']],
     },
     {
       // пока Тихон на кухне, буквы не сдвинутся (закон 3)
@@ -106,7 +113,7 @@ export default {
       after: 30,
       once: true,
       when: (s) => night(s) && s.location === 'kitchen' && !s.flags.lettersMoved,
-      do: [['thought', 'Тихо. Только холодильник гудит. Кажется, пока я здесь, ничего не случится.']],
+      do: [['thought', 'Холодильник гудит, часы тикают. Больше ничего. Пока я тут стою — ничего и не будет.']],
     },
     {
       id: 'clicks',
@@ -115,9 +122,16 @@ export default {
       when: (s) => night(s) && s.location !== 'kitchen',
       set: { lettersMoved: true, heardWhisper: true },
       do: [
-        ['sfx', 'magnet', { caption: 'щелчки из кухни' }], ['wait', 0.9], ['sfx', 'magnet'], ['wait', 0.7], ['sfx', 'magnet'],
-        ['wait', 1.2], ['sfx', 'whisper', { caption: 'шёпот: «…ходи…»' }], ['wait', 1.8],
-        ['thought', 'Щелчки. Из кухни. И этот шёпот… «ходи»?'],
+        // шаги на пустой кухне
+        ['sfx', 'creak', { caption: 'на кухне скрипит пол — будто кто-то ходит' }], ['shake', 1],
+        ['wait', 1.5], ['sfx', 'creak'], ['wait', 1.6],
+        // четыре буквы едут по дверце и щёлкают о металл
+        ['sfx', 'magnet', { caption: 'щёлк… щёлк… — магниты на холодильнике' }],
+        ['wait', 0.9], ['sfx', 'magnet'], ['wait', 0.7], ['sfx', 'magnet'], ['wait', 1.1], ['sfx', 'magnet'],
+        // одна срывается и стучит по полу
+        ['wait', 0.5], ['sfx', 'fall', { caption: 'что-то упало и стучит по полу' }], ['shake', 1],
+        ['wait', 2], ['sfx', 'whisper', { caption: 'шёпот из-за двери Веры: «…ходи…»' }], ['wait', 1.8],
+        ['thought', 'Там кто-то есть.'],
       ],
     },
     {
@@ -125,7 +139,21 @@ export default {
       after: 45,
       once: true,
       when: (s) => night(s) && s.flags.lettersMoved && !s.flags.sawLetters && s.location !== 'kitchen',
-      do: [['thought', 'Щелчки были из кухни. Надо посмотреть.']],
+      do: [['thought', 'Этот щелчок я знаю. Магнит о дверцу. Так щёлкало, когда мама перевешивала мои буквы.']],
+    },
+    {
+      id: 'arrive',
+      after: 3,
+      once: true,
+      when: (s) => s.location === 'kitchen' && s.flags.lettersMoved && !s.flags.sawLetters,
+      do: [['thought', 'Кухня. Лампа, гул холодильника, красный сигнал за окном. Всё как всегда. Или нет?']],
+    },
+    {
+      id: 'letters-hint',
+      after: 70,
+      once: true,
+      when: (s) => !night(s) && s.flags.lettersMoved && !s.flags.sawLetters,
+      do: [['thought', 'Мама любит, чтобы всё висело на своих местах. Ровно, по линеечке.']],
     },
     {
       id: 'six-forty',
@@ -133,24 +161,17 @@ export default {
       once: true,
       when: (s) => !night(s),
       do: [
-        ['sfx', 'train', { caption: 'идёт электричка', dur: 5 }], ['event', 'train'], ['shake', 4],
+        ['sfx', 'train', { caption: 'идёт электричка', dur: 5 }], ['event', 'train'], ['shake', 2],
         ['sfx', 'clink', { caption: 'звенят чашки' }], ['wait', 2.4],
         ['sfx', 'horns', { caption: 'два коротких гудка' }], ['wait', 1.5],
-        ['thought', 'Два гудка. Папа. Каждое утро в 6:40 — «я здесь».'],
+        ['thought', 'Два гудка. Папа. Каждое утро в 6:40 одно и то же: «я здесь».'],
       ],
     },
     {
       id: 'morning-train',
-      every: [100, 140],
+      every: [40, 65],
       when: (s) => !night(s) && s.fired['six-forty'],
-      do: [['sfx', 'train', { caption: 'идёт электричка', dur: 5 }], ['event', 'train'], ['shake', 3]],
-    },
-    {
-      id: 'letters-hint',
-      after: 70,
-      once: true,
-      when: (s) => !night(s) && s.flags.lettersMoved && !s.flags.sawLetters,
-      do: [['thought', 'Холодильник… Ночью щёлкали именно там.']],
+      do: [['sfx', 'train', { caption: 'идёт электричка', dur: 5 }], ['event', 'train'], ['shake', 2]],
     },
   ],
 
@@ -161,9 +182,12 @@ export default {
       beat: [
         ['wait', 0.6],
         ['say', 't', '…ХОДИ.'],
-        ['think', '{При}ходи?..'],
-        ['say', 't', 'Щелчки ночью. Шёпот «…ходи». Кто-то стоял здесь и двигал буквы.'],
-        ['say', 't', 'Кто-то зовёт меня. Сегодня ночью я буду здесь.'],
+        ['think', 'Перед «Х» — пустое место. Как будто начало слова не дошло.'],
+        ['think', '{При}ходи.'],
+        ['say', 't', 'ПРИХОДИ.'],
+        ['think', 'Шесть лет назад Вера написала: «Не приходи провожать». И я не пришёл.'],
+        ['think', 'А теперь кто-то пишет мне то самое слово. Без «не».'],
+        ['say', 't', 'Ладно. Кто бы ты ни был. Сегодня ночью я приду.'],
         ['music', null, { fade: 2 }],
         ['wait', 1],
         ['sfx', 'sting'],
@@ -171,22 +195,24 @@ export default {
         // Та же кухня, той же ночью, мир «Приходи»
         ['scene', 'kitchen-p', { shot: 'wide', transition: 'morph', dur: 3.5 }],
         ['music', 'p-night', { fade: 4 }],
-        ['card', 'Той же ночью · 01:50', 'Тот же дом'],
+        ['card', 'Несколько часов назад · 01:50', 'Тот же дом · мир «Приходи»'],
         ['shot', 'twin', { dur: 6 }],
         ['say', 'x', 'Хватит. Я знаю, что ты здесь.'],
-        ['say', 'x', 'Три недели ты двигаешь мои вещи. Переставляешь чашки. Гремишь посудой по ночам.'],
-        ['say', 'x', 'Не знаю, кто ты. Но это мой дом.'],
+        ['say', 'x', 'Три недели! Чашки переставлены, ключи из хлебницы уползают, половицы скрипят, когда никто не ходит.'],
+        ['say', 'x', 'Не знаю, кто ты и что тебе надо. Но это мой дом, ясно? Мой.'],
         ['hide'],
-        ['shot', 'row', { dur: 3, wait: true }],
+        ['scene', 'kitchen-p-fridge', { shot: 'row', transition: 'cross', dur: 1.4 }],
         ['event', 'place'],
         ['wait', 1.2],
-        ['shot', 'window', { dur: 4 }],
-        ['think', 'Книга Веры на подоконнике. Всегда тут лежит.'],
-        ['say', 'x', 'Слышишь? Уходи.'],
+        ['say', 'x', 'У. Х. О. Д. И. Крупно и ровно. Даже призрак прочтёт.'],
+        ['scene', 'kitchen-p', { shot: 'window', transition: 'cross', dur: 1.6 }],
+        ['think', 'Верина книга на подоконнике. Разбухшая, волнами. Шесть лет тут лежит — и никто её не убирает.'],
+        ['say', 'x', 'Слышишь? УХОДИ.'],
         ['wait', 1],
         ['event', 'glow', { wait: false }],
         ['shot', 'room', { dur: 5 }],
-        ['say', 'x', 'Утром проверю. Если буквы останутся на месте — значит, ты ушёл.'],
+        ['say', 'x', 'Утром проверю. Будут висеть, как я повесил, — значит, ты ушёл.'],
+        ['card', 'ПРИХОДИ · УХОДИ', 'Одни и те же буквы'],
         ['end'],
       ],
     },
