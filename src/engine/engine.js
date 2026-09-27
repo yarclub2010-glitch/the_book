@@ -522,45 +522,13 @@ export class Game {
     return what ? what.split(', ') : [];
   }
 
-  // Новый предмет в руках: звук, метка «+ лимон» у места щелчка перелетает в строку «В руках»,
-  // строка один раз мягко загорается. Без мигания.
-  pickupFx(items, at) {
+  // Новый предмет в руках: короткий звук, строка «В руках» один раз тепло загорается. Без мигания.
+  pickupFx() {
     audio.sfx('pickup');
     const carry = $('#carry');
-    const box = carry.parentElement;
-    const b = box.getBoundingClientRect();
-    const st = $('#stage').getBoundingClientRect();
-    const x0 = st.left - b.left + at[0] * st.width;
-    // чуть выше места щелчка, но не у самого края кадра
-    const y0 = st.top - b.top + Math.max(at[1] - 0.07, 0.1) * st.height;
-    const c = carry.getBoundingClientRect();
-    const x1 = c.left - b.left + c.width / 2;
-    const y1 = c.top - b.top + c.height / 2;
-    const el = document.createElement('div');
-    el.className = 'pickup';
-    el.textContent = `+ ${items.join(', ')}`;
-    el.style.left = `${x0}px`;
-    el.style.top = `${y0}px`;
-    box.appendChild(el);
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const anim = el.animate([
-      { transform: 'translate(-50%, -50%) scale(0.85)', opacity: 0 },
-      { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, offset: 0.15 },
-      { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, offset: 0.45 },
-      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.7)`, opacity: 0.15 },
-    ], { duration: 1500, easing: 'cubic-bezier(0.5, 0, 0.3, 1)', fill: 'forwards' });
-    let done = false;
-    const land = () => {
-      if (done) return;
-      done = true;
-      el.remove();
-      carry.classList.add('got');
-      clearTimeout(this.gotTimer);
-      this.gotTimer = setTimeout(() => carry.classList.remove('got'), 1800);
-    };
-    anim.onfinish = land;
-    setTimeout(land, 1700); // если анимации выключены или вкладка спит — всё равно приземлиться
+    carry.classList.add('got');
+    clearTimeout(this.gotTimer);
+    this.gotTimer = setTimeout(() => carry.classList.remove('got'), 2200);
   }
 
   // Что герой держит в руках (глава решает по флажкам: carry(state) → 'книга' или '')
@@ -636,9 +604,9 @@ export class Game {
       Object.assign(this.state.flags, res.set);
       this.applySceneState();
       this.updateCarry();
-      // взял новый предмет — пусть это будет видно: метка летит от предмета к «В руках»
+      // взял новый предмет — пусть это будет видно и слышно
       const fresh = this.carryList().filter((x) => !before.includes(x));
-      if (fresh.length) this.pickupFx(fresh, at);
+      if (fresh.length) this.pickupFx();
     }
     if (res.go) {
       this.go(res.go);

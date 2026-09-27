@@ -377,14 +377,7 @@ button { font: inherit; color: inherit; }
 /* только что взял предмет: строка один раз тепло загорается и гаснет (не мигает) */
 .carry { transition: opacity 0.3s, box-shadow 0.9s ease, color 0.9s ease, border-color 0.9s ease; }
 .carry.got { color: #fff3dc; border-color: rgba(255, 214, 150, 0.95); box-shadow: 0 0 1.6cqw rgba(243, 181, 63, 0.55); }
-/* метка «+ предмет»: появляется у предмета и перелетает в «В руках» */
-.pickup {
-  position: absolute; z-index: 6; pointer-events: none; white-space: nowrap;
-  font-size: 1.35cqw; letter-spacing: 0.04em; padding: 0.4cqw 1.1cqw; border-radius: 999px;
-  background: rgba(0, 0, 0, 0.62); color: #ffe2b0; border: 0.1cqw solid rgba(243, 197, 138, 0.75);
-  box-shadow: 0 0 1.6cqw rgba(243, 181, 63, 0.35); opacity: 0;
-}
-@media (prefers-reduced-motion: reduce) { .pickup { display: none; } }
+
 
 /* Режим разработчика (?zones): все зоны видны */
 .debug-zones .hs .hs-shape { opacity: 1; stroke: rgba(0, 255, 255, 0.8); stroke-dasharray: 4 3; fill: rgba(0, 255, 255, 0.08); }
