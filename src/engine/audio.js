@@ -1370,6 +1370,11 @@ const SFX = {
       if (Math.random() < 0.3) creakVoice(a, a.sfxBus, tt + 0.05, { len: 0.25, vol: 0.25, f0: 900, f1: 1100, send: 0.2 });
     }
   },
+  // Взял предмет: два восходящих тёплых тона — «в кармане»
+  pickup(a, t) {
+    a.tone(a.sfxBus, { freq: midi(76), t, dur: 0.5, vol: 0.05, attack: 0.004, send: 0.45 });
+    a.tone(a.sfxBus, { freq: midi(83), t: t + 0.09, dur: 0.7, vol: 0.045, attack: 0.004, send: 0.5 });
+  },
   // Осмотр предмета: мягкий короткий звук
   look(a, t) {
     a.tone(a.sfxBus, { freq: midi(88), t, dur: 0.6, vol: 0.035, attack: 0.005, send: 0.5 });

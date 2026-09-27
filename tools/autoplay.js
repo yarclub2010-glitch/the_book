@@ -145,7 +145,8 @@ export async function run(game) {
       await go('kitchen', 'kitchen-np-night');
       await click('fridge');
       game.zoomOut();
-      await click('cabinet');
+      await go('hall', 'hall-np-night');
+      await click('hats');
       game.zoomOut();
       await go('vera', 'vera-np');
       await click('desk');

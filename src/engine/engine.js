@@ -517,6 +517,52 @@ export class Game {
     this.updateCarry();
   }
 
+  carryList() {
+    const what = this.state && this.chapter && this.chapter.carry ? this.chapter.carry(this.state) : '';
+    return what ? what.split(', ') : [];
+  }
+
+  // Новый предмет в руках: звук, метка «+ лимон» у места щелчка перелетает в строку «В руках»,
+  // строка один раз мягко загорается. Без мигания.
+  pickupFx(items, at) {
+    audio.sfx('pickup');
+    const carry = $('#carry');
+    const box = carry.parentElement;
+    const b = box.getBoundingClientRect();
+    const st = $('#stage').getBoundingClientRect();
+    const x0 = st.left - b.left + at[0] * st.width;
+    // чуть выше места щелчка, но не у самого края кадра
+    const y0 = st.top - b.top + Math.max(at[1] - 0.07, 0.1) * st.height;
+    const c = carry.getBoundingClientRect();
+    const x1 = c.left - b.left + c.width / 2;
+    const y1 = c.top - b.top + c.height / 2;
+    const el = document.createElement('div');
+    el.className = 'pickup';
+    el.textContent = `+ ${items.join(', ')}`;
+    el.style.left = `${x0}px`;
+    el.style.top = `${y0}px`;
+    box.appendChild(el);
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const anim = el.animate([
+      { transform: 'translate(-50%, -50%) scale(0.85)', opacity: 0 },
+      { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, offset: 0.15 },
+      { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, offset: 0.45 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.7)`, opacity: 0.15 },
+    ], { duration: 1500, easing: 'cubic-bezier(0.5, 0, 0.3, 1)', fill: 'forwards' });
+    let done = false;
+    const land = () => {
+      if (done) return;
+      done = true;
+      el.remove();
+      carry.classList.add('got');
+      clearTimeout(this.gotTimer);
+      this.gotTimer = setTimeout(() => carry.classList.remove('got'), 1800);
+    };
+    anim.onfinish = land;
+    setTimeout(land, 1700); // если анимации выключены или вкладка спит — всё равно приземлиться
+  }
+
   // Что герой держит в руках (глава решает по флажкам: carry(state) → 'книга' или '')
   updateCarry() {
     const what = this.state && this.chapter && this.chapter.carry ? this.chapter.carry(this.state) : '';
@@ -586,9 +632,13 @@ export class Game {
 
     const res = (this.chapter.interact && this.chapter.interact(this.stage.scene.id, spot.id, this.state)) || {};
     if (res.set) {
+      const before = this.carryList();
       Object.assign(this.state.flags, res.set);
       this.applySceneState();
       this.updateCarry();
+      // взял новый предмет — пусть это будет видно: метка летит от предмета к «В руках»
+      const fresh = this.carryList().filter((x) => !before.includes(x));
+      if (fresh.length) this.pickupFx(fresh, at);
     }
     if (res.go) {
       this.go(res.go);
@@ -671,6 +721,9 @@ export class Game {
     if (!this.state || this.mode !== 'explore' || this.panelOpen() || document.hidden) return;
     const s = this.state;
     for (const t of this.chapter.timers || []) {
+      // таймер запустил сценку (например, 6:40 — гудки) — остальные в этом такте ждут:
+      // иначе «рука затекла» выскочит посреди перехода
+      if (this.mode !== 'explore') break;
       if (t.once && s.fired[t.id]) continue;
       if (!t.when(s)) continue;
       s.elapsed[t.id] = (s.elapsed[t.id] || 0) + 1;
