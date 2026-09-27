@@ -150,6 +150,7 @@ button { font: inherit; color: inherit; }
 .w-pencil, .w-faint, .w-lemon, .w-burn, .w-reply, .w-m2 { display: none; }
 .w-pencil-on .w-pencil, .w-faint-on .w-faint, .w-lemon-on .w-lemon, .w-burn-on .w-burn, .w-reply-on .w-reply, .w-m2-on .w-m2 { display: inline; }
 .w-burn-on .w-lemon { display: none; }
+.w-burn-on .w-pencil { opacity: 0.3; }
 .w-reply-on .w-reply { animation: reveal 4s ease-out; }
 @keyframes reveal { from { opacity: 0; } }
 .note-shift .note-a { display: none; }
@@ -247,6 +248,9 @@ button { font: inherit; color: inherit; }
 .card-title { font-family: "Unbounded", sans-serif; font-weight: 700; font-size: 4cqw; letter-spacing: 0.04em; color: #fff; }
 .card-sub { margin-top: 0.8cqw; font-size: 1.5cqw; color: rgba(255, 255, 255, 0.75); letter-spacing: 0.08em; text-transform: uppercase; }
 [data-world="p"] .card-title { color: #ffd1e6; text-shadow: 0 0 2cqw rgba(255, 138, 184, 0.6); }
+/* титр сам подсказывает мир — без слов: тёплый розовый («Приходи») или холодный стальной («Не приходи») */
+.card[data-w="p"] .card-title { color: #ffd1e6; text-shadow: 0 0 2cqw rgba(255, 138, 184, 0.6); }
+.card[data-w="np"] .card-title { color: #e4edf5; text-shadow: 0 0 2cqw rgba(140, 175, 210, 0.45); }
 
 /* ================= Загадки ================= */
 .banner {

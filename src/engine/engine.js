@@ -142,7 +142,7 @@ export class Game {
       this.next();
     });
     stageEl.addEventListener('contextmenu', (e) => {
-      if (this.mode === 'explore' && this.zoomed) {
+      if (this.canBack()) {
         e.preventDefault();
         this.zoomOut();
       }
@@ -162,14 +162,14 @@ export class Game {
     stageEl.addEventListener('wheel', (e) => {
       if (this.panelOpen() || !this.mode) return;
       // колесо вниз — отойти от предмета; журнал колесом не открывается (только L или кнопкой)
-      if (e.deltaY > 0 && this.mode === 'explore' && this.zoomed) this.zoomOut();
+      if (e.deltaY > 0 && this.canBack()) this.zoomOut();
     });
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         if ($('#inspect').classList.contains('on')) this.inspect(null);
         else if (this.panelOpen()) this.closePanels();
-        else if (this.mode === 'explore' && this.zoomed) this.zoomOut();
+        else if (this.canBack()) this.zoomOut();
         else if (this.mode === 'explore' || this.mode === 'beat') this.openPanel('pause');
         return;
       }
@@ -481,10 +481,13 @@ export class Game {
 
   async enterLocation(loc, { transition = 'fade', dur = 1.2 } = {}) {
     const L = this.chapter.locations[loc];
+    // скрытое место (книга, экран телефона) — крупный план: «назад» возвращает туда, откуда пришли
+    const prev = this.state.location;
+    if (L.hidden && prev && prev !== loc && !this.chapter.locations[prev]?.hidden) this.state.from = prev;
     this.state.location = loc;
     this.exitPuzzle();
     this.zoomed = null;
-    this.setBack(false);
+    this.setBack(this.backLoc() !== null);
     const sceneId = this.sceneIdFor(loc);
     await this.stage.show(sceneId, { shot: 'wide', transition, dur, classes: this.sceneClassList() });
     this.applySceneState();
@@ -543,10 +546,26 @@ export class Game {
     this.maybeEnterPuzzle();
   }
 
+  // Куда ведёт «назад» из скрытого места (null — назад некуда)
+  backLoc() {
+    const L = this.chapter && this.state && this.chapter.locations[this.state.location];
+    if (!L || !L.hidden) return null;
+    const to = this.state.from || Object.keys(this.chapter.locations).find((id) => !this.chapter.locations[id].hidden);
+    return to && this.chapter.locations[to] && !this.chapter.locations[to].hidden ? to : null;
+  }
+
+  canBack() {
+    return this.mode === 'explore' && !this.panelOpen() && (!!this.zoomed || this.backLoc() !== null);
+  }
+
   zoomOut() {
-    if (!this.zoomed) return;
+    if (!this.zoomed) {
+      const to = this.backLoc();
+      if (to && this.mode === 'explore') this.go(to);
+      return;
+    }
     this.zoomed = null;
-    this.setBack(false);
+    this.setBack(this.backLoc() !== null);
     this.exitPuzzle();
     this.stage.shot('wide', { dur: 1.1 });
   }
@@ -754,7 +773,7 @@ export class Game {
         await this.line('narr', null, a, token);
         break;
       case 'card':
-        await this.card(a, typeof b === 'string' ? b : '', token);
+        await this.card(a, typeof b === 'string' ? b : '', token, cmd[3]);
         break;
       case 'music':
         if (a) audio.music(a, { fade: opts.fade ?? 2.5 });
@@ -915,8 +934,11 @@ export class Game {
     dialog.classList.remove('done');
   }
 
-  async card(title, sub, token) {
+  // world — 'np' | 'p': мир не называется словами, только цветом титра (холодный / тёплый)
+  async card(title, sub, token, world) {
     const el = $('#card');
+    if (world) el.dataset.w = world;
+    else delete el.dataset.w;
     $('#card-title').textContent = title;
     $('#card-sub').textContent = sub;
     el.classList.add('on');

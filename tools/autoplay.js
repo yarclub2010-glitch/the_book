@@ -153,8 +153,8 @@ export async function run(game) {
       await go('kitchen', 'kitchen-np-night');
       await click('sill');
       await scene('book-np');
-      await click('marginR');
-      await click('marginR');
+      await click('marginL');
+      await click('marginL');
       check(flag('burned'), 'ch3: «Кто ты?» проступило ожогом');
       await go('vera', 'vera-np');
       await click('desk');
@@ -243,7 +243,7 @@ export async function run(game) {
       await go('kitchen', 'kitchen-p-evening');
       await click('book');
       await scene('book-p');
-      await click('marginR');
+      await click('pageR');
       check(flag('sent'), 'ch8: письмо двойнику прожжено');
       await go('hall', 'hall-p');
       await fire('reply');
