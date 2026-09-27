@@ -49,7 +49,7 @@ export class Stage {
     if (!this.cache.has(id)) {
       const def = scenes[id];
       // ambientFor — «жизнь» сцены: дождь на стёклах, пыль в луче, пар, колыхание штор
-      this.cache.set(id, `<g class="art" pointer-events="none">${def.build()}${ambientFor(id)}</g>${hotspotsMarkup(def.hotspots || [])}`);
+      this.cache.set(id, `<g class="art" pointer-events="none">${def.build()}${ambientFor(id)}</g>${hotspotsMarkup(def.hotspots || [], id)}`);
     }
     return this.cache.get(id);
   }
@@ -235,17 +235,29 @@ export class Stage {
 }
 
 // Активные зоны: { id, group = 'look', label, shape: { points: [[x, y], …] } | { circle: [x, y, r] } }
-function hotspotsMarkup(list) {
+// Наведение ничего не рисует поверх предмета: вокруг него чуть темнеет, а сам он остаётся
+// нетронутым в мягком «окне» с растушёванным краем — как фокус в кино. Никаких пятен и рамок.
+function hotspotsMarkup(list, sceneId = 's') {
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-  const items = list.map((h) => {
-    const shape = h.shape.circle
-      ? `<circle class="hs-shape" cx="${h.shape.circle[0].toFixed(1)}" cy="${h.shape.circle[1].toFixed(1)}" r="${h.shape.circle[2].toFixed(1)}"/>`
-      : `<polygon class="hs-shape" points="${h.shape.points.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')}"/>`;
-    return `<g class="hs" data-id="${esc(h.id)}" data-group="${esc(h.group || 'look')}" data-label="${esc(h.label || '')}">${shape}</g>`;
+  const uid = String(sceneId).replace(/[^\w-]/g, '_');
+  const items = list.map((h, i) => {
+    const geom = h.shape.circle
+      ? (cls, extra = '') => `<circle class="${cls}" cx="${h.shape.circle[0].toFixed(1)}" cy="${h.shape.circle[1].toFixed(1)}" r="${h.shape.circle[2].toFixed(1)}" ${extra}/>`
+      : (cls, extra = '') => `<polygon class="${cls}" points="${h.shape.points.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')}" ${extra}/>`;
+    const m = `hsm-${uid}-${i}`;
+    // размер зоны → мягкость края: мелкой букве — узкая растушёвка, шкафу — широкая
+    const pts = h.shape.circle ? [[h.shape.circle[0] - h.shape.circle[2], h.shape.circle[1] - h.shape.circle[2]], [h.shape.circle[0] + h.shape.circle[2], h.shape.circle[1] + h.shape.circle[2]]] : h.shape.points;
+    const xs = pts.map((p) => p[0]);
+    const ys = pts.map((p) => p[1]);
+    const size = Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+    const feather = size < 90 ? 's' : size < 260 ? 'm' : 'l';
+    const focus = `<mask id="${m}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="#fff"/>${geom('', `fill="#000" filter="url(#hs-feather-${feather})"`)}</mask>`
+      + `<rect class="hs-dim" width="${W}" height="${H}" mask="url(#${m})"/>`;
+    return `<g class="hs" data-id="${esc(h.id)}" data-group="${esc(h.group || 'look')}" data-label="${esc(h.label || '')}">${focus}${geom('hs-shape')}</g>`;
   });
-  // мягкое свечение вместо рамки: к краям зоны свет гаснет до нуля
-  const glow = (id, c) => `<radialGradient id="${id}" cx="50%" cy="50%" r="55%"><stop offset="0" stop-color="${c}" stop-opacity="0.75"/><stop offset="0.55" stop-color="${c}" stop-opacity="0.3"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`;
-  const defs = `<defs>${glow('hs-glow', '#ffd89a')}${glow('hs-glow-p', '#ff9fd0')}${glow('hs-glow-hi', '#fff2c8')}</defs>`;
+  // растушёвка края «окна»: чем больше зона, тем мягче переход
+  const f = (k, d) => `<filter id="hs-feather-${k}" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="${d}"/></filter>`;
+  const defs = `<defs>${f('s', 5)}${f('m', 11)}${f('l', 20)}</defs>`;
   return `<g class="hotspots">${defs}${items.join('')}</g>`;
 }
 

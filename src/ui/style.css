@@ -289,12 +289,14 @@ button { font: inherit; color: inherit; }
 /* Активные зоны: видимы только при наведении */
 .hs { pointer-events: none; }
 .hs.active { pointer-events: all; cursor: pointer; }
-/* Наведение: без рамки — предмет будто подсвечен лампой: свет гаснет к краям зоны */
-.hs-shape { fill: transparent; stroke: none; opacity: 0; transition: opacity 0.45s ease; }
-.hs.active[data-group="look"]:hover .hs-shape { fill: url(#hs-glow); opacity: 1; mix-blend-mode: screen; }
-[data-world="p"] .hs.active[data-group="look"]:hover .hs-shape { fill: url(#hs-glow-p); }
-.hs.active[data-group="letters"]:hover .hs-shape,
-.hs.active[data-group="frags"]:hover .hs-shape { fill: url(#hs-glow-hi); opacity: 1; mix-blend-mode: screen; }
+/* Наведение: сам предмет не трогаем — вокруг него мягко темнеет (фокус), край растушёван */
+.hs-shape { fill: transparent; stroke: none; }
+.hs-dim { pointer-events: none; fill: #07060c; opacity: 0; transition: opacity 0.5s ease; }
+[data-world="p"] .hs-dim { fill: #1a0a22; }
+.hs.active[data-group="look"]:hover .hs-dim { opacity: 0.4; }
+/* мелкие детали загадок (буквы, обрывки) — фокус чуть плотнее, чтобы деталь читалась */
+.hs.active[data-group="letters"]:hover .hs-dim,
+.hs.active[data-group="frags"]:hover .hs-dim { opacity: 0.46; transition-duration: 0.25s; }
 
 /* Подпись предмета: в мире НП — как титр в кино, в мире П — розовая плашка */
 .hs-label {
