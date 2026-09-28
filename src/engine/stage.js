@@ -89,7 +89,8 @@ export class Stage {
     zones.forEach((z) => z.classList.add('active'));
     const frame = this.view.getBoundingClientRect();
     for (const z of zones) {
-      const r = z.getBoundingClientRect();
+      // размер — по форме зоны, а не по группе: в группе ещё полноэкранный слой фокуса
+      const r = (z.querySelector('.hs-shape') || z).getBoundingClientRect();
       const x = r.left + r.width / 2;
       const y = r.top + r.height / 2;
       if (r.width < 1 || x < frame.left || x > frame.right || y < frame.top || y > frame.bottom) continue; // вне кадра

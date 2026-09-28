@@ -36,7 +36,7 @@ const ROW_P = { У: [540, 712], Х: [625, 712], О: [710, 712], Д: [795, 712], 
 const PW_DOOR = { x: 1040, y: 452, dx: 38, dy: 45, size: 31 };
 const ROW_PW = { У: [1078, 668], Х: [1116, 668], О: [1154, 668], Д: [1192, 668], И: [1230, 674] };
 
-function letterLayout(world) {
+function letterLayout(world, row = true) {
   const B = { np: BG.np, p: BG.pf, pw: BG.p }[world];
   const D = { np: NP_DOOR, p: P_DOOR, pw: PW_DOOR }[world];
   const size = D.size * B.k;
@@ -51,7 +51,7 @@ function letterLayout(world) {
       const [dx, dy, mr] = MOVED_NP[ch];
       Object.assign(l, { pos: B.I(px + dx, py + dy), rot: mr, moved: true });
     }
-    if (world === 'pw' && ROW_PW[ch]) Object.assign(l, { pos: B.I(...ROW_PW[ch]), rot: 0 });
+    if (world === 'pw' && row && ROW_PW[ch]) Object.assign(l, { pos: B.I(...ROW_PW[ch]), rot: 0 });
     if (world === 'p' && ROW_P[ch]) {
       const to = B.I(...ROW_P[ch]);
       Object.assign(l, { dx: to[0] - home[0], dy: to[1] - home[1] });
@@ -60,7 +60,7 @@ function letterLayout(world) {
   });
 }
 
-function letters(world) {
+function letters(world, row = true) {
   const fw = world === 'np' ? 'np' : 'p';
   const stroke = fw === 'p' ? '#1b1438' : '#2a2018';
   // мир НП: лампа слева — чем правее и ниже буква, тем глубже она в тени дверцы
@@ -74,7 +74,7 @@ function letters(world) {
     const extra = l.dx !== undefined ? ` data-dx="${l.dx.toFixed(1)}" data-dy="${l.dy.toFixed(1)}"` : '';
     return `<g class="mag${cls}" data-ch="${l.ch}"${extra}${shade(pos)}><g transform="translate(${pos[0].toFixed(1)} ${pos[1].toFixed(1)}) rotate(${rot})"><text fill="${l.color}" stroke="${stroke}" stroke-width="${fw === 'p' ? 2.2 * layout[0].size / 60 + 0.8 : 1}">${l.ch}</text><text fill="url(#mag-shine)" stroke="none">${l.ch}</text></g></g>`;
   };
-  const layout = letterLayout(world);
+  const layout = letterLayout(world, row);
   const xs = [Math.min(...layout.map((l) => l.home[0])), Math.max(...layout.map((l) => l.home[0]))];
   const ys = [Math.min(...layout.map((l) => l.home[1])), Math.max(...layout.map((l) => l.home[1]))];
   let s = `<g class="letters" font-family="Rubik, 'Arial Black', sans-serif" font-weight="900" font-size="${layout[0].size.toFixed(1)}" text-anchor="middle" style="filter:url(#k${fw}-mag)${world === 'np' ? ' brightness(0.82) saturate(0.8)' : ''}">`;
@@ -307,6 +307,13 @@ function buildP(withTwin) {
   // Верина книга на подоконнике — лежит здесь шесть лет, страницы вздулись
   o += `<g class="sill-book-p">${sillBook(B, true)}</g>`;
   if (!withTwin) o += letters('pw');
+  else {
+    // ночью у холодильника двойник: буквы видны везде, кроме места, где он заслоняет дверцу
+    // (маска — его силуэт, вычислен из того же кадра без него). До «УХОДИ» — вразнобой, после — ряд.
+    const mask = B.image('').replace(B.src, 'assets/backgrounds/K-P-1v2-twin-mask.png');
+    o += `<defs><mask id="kpt-boy" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="900">${mask}</mask></defs>`;
+    o += `<g mask="url(#kpt-boy)"><g class="pw-home">${letters('pw', false)}</g><g class="pw-row">${letters('pw')}</g></g>`;
+  }
   return s + (withTwin ? `<g style="filter:brightness(0.5) saturate(0.7) hue-rotate(20deg)">${o}</g>` : o);
 }
 

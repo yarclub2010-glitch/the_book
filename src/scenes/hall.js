@@ -113,11 +113,11 @@ export const roomP = {
     shelves: RP.rect(1030, 30, 1376, 270),
     board: RP.rect(640, 130, 850, 370),
     pegboard: RP.rect(0, 320, 180, 590),
-    chair: RP.rect(650, 570, 790, 768),
+    chair: RP.rect(662, 570, 790, 768),
     lamp: RP.rect(185, 405, 325, 495),
     solder: RP.rect(330, 440, 525, 520),
     headphones: RP.rect(330, 525, 505, 625),
-    drawer: RP.rect(590, 590, 760, 700),
+    drawer: RP.rect(585, 585, 662, 705),
   }).map(([id, shape]) => {
     const [label, shot, lines] = LOOK_RP[id];
     return { id, label, shot, shape, lines, view: id === 'board' ? 'assets/items/I-BOARD-P.jpg' : undefined };

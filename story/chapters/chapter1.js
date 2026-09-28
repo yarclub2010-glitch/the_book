@@ -45,7 +45,7 @@ export default {
   },
 
   // Закон 3: изменения из другого мира приходят, когда в комнате никого нет
-  sceneClasses: (s) => (s.flags.lettersMoved ? ['letters-moved'] : []),
+  sceneClasses: (s) => [s.flags.lettersMoved && 'letters-moved', s.flags.uhodi && 'uhodi-on'].filter(Boolean),
 
   intro: [
     ['card', 'Нижние Броды', '01:46 · одна чашка на столе', 'np'],
@@ -203,6 +203,7 @@ export default {
         ['hide'],
         ['scene', 'kitchen-p-fridge', { shot: 'row', transition: 'cross', dur: 1.4 }],
         ['event', 'place'],
+        ['set', { uhodi: true }],
         ['wait', 1.2],
         ['say', 'x', 'У. Х. О. Д. И. Крупно и ровно. Даже призрак прочтёт.'],
         ['scene', 'kitchen-p', { shot: 'window', transition: 'cross', dur: 1.6 }],

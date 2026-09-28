@@ -127,6 +127,10 @@ button { font: inherit; color: inherit; }
 
 /* Состояние мира на сцене (классы от главы) */
 .note-b, .sill-book, .bg-nobook, .bg-book { display: none; }
+/* ночная кухня П с двойником: до «УХОДИ» буквы вразнобой, после — ряд внизу дверцы */
+.pw-row { display: none; }
+.uhodi-on .pw-row { display: inline; }
+.uhodi-on .pw-home { display: none; }
 .book-on-sill .bg-book { display: inline; }
 /* мир «Приходи», глава 5: Вера в дверях, открытая хлебница, подсказка в книге */
 .bg-vera, .bg-open, .w-hint, .w-p7, .w-x8, .w-8a, .w-8b, .w-9, .anchor-ne { display: none; }

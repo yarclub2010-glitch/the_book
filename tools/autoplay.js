@@ -76,6 +76,10 @@ export async function run(game) {
     for (let i = 0; i < 6 && game.mode !== 'explore' && game.mode !== 'end'; i++) await play(() => 0, 300);
     check(game.mode === 'explore' || game.mode === 'end', `${id}: вступление пройдено`);
   };
+  // длинные финалы при медленной машине: доиграть сценку до экрана конца, а не проверять на полпути
+  const playToEnd = async () => {
+    for (let i = 0; i < 400 && game.mode !== 'end'; i++) await play(() => 0, 20);
+  };
   const ended = (id, title) => {
     const t = document.querySelector('#end-title-text').textContent;
     check(game.mode === 'end' && (!title || t.includes(title)), `${id}: экран конца «${t}»`);
@@ -256,6 +260,7 @@ export async function run(game) {
       await click('photo');
       await minutesTo(40);
       await play((t) => t.findIndex((x) => x.includes('Держать')));
+      await playToEnd();
       ended('ch8');
     },
     async ch9(legacy, pick, title) {
@@ -269,6 +274,7 @@ export async function run(game) {
       await minutesTo(40);
       await play((t) => t.findIndex((x) => x.includes(pick)));
       check(game.state.flags.ne, 'ch9: «Не» на фото-якоре');
+      await playToEnd();
       ended('ch9', title);
     },
   };
