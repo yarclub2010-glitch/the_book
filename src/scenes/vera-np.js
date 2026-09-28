@@ -21,7 +21,7 @@ function buildRoom() {
   // когда книгу унесли — тот же кадр без книги на столе (V-NP-1-nobook)
   s += ROOM_EMPTY.image('class="bg-nobook"');
   s += ROOM_UV.image('class="bg-uv"') + ROOM_EMPTY_UV.image('class="bg-uv bg-nobook"');
-  s += ROOM_N.image('class="bg-night"') + ROOM_EMPTY_N.image('class="bg-night bg-nobook"');
+  s += ROOM_N.image('class="bg-vnight"') + ROOM_EMPTY_N.image('class="bg-vnight bg-nobook"');
   const lamp = B.I(675, 405);
   s += `<circle class="flicker" cx="${lamp[0]}" cy="${lamp[1]}" r="260" fill="url(#vr-lamp)" style="mix-blend-mode:screen"/>`;
   // пыль в свете лампы
@@ -35,7 +35,7 @@ function buildRoom() {
 function buildDesk() {
   const B = DESK;
   let s = `<defs></defs>`;
-  s += B.image('class="bg"') + DESK_N.image('class="bg-night"');
+  s += B.image('class="bg"') + DESK_N.image('class="bg-vnight"');
   return s;
 }
 

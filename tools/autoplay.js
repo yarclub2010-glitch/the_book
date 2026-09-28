@@ -280,6 +280,49 @@ export async function run(game) {
   };
 
   const t0 = performance.now();
+
+  // Картинки: в каждом состоянии каждой главы у каждого места виден фон, и все картинки загружаются
+  // (ловит, например, класс, который по ошибке прячет фон, или удалённый файл)
+  {
+    const { scenes } = await import('../src/scenes/index.js');
+    const mods = [];
+    for (const n of ['1', '2', '3', '4', '5', '6', '7', '8', '8x', '9']) mods.push((await import(`../story/chapters/chapter${n}.js`)).default);
+    const host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:0;top:0;width:1600px;height:900px;z-index:-1;pointer-events:none';
+    document.getElementById('game').appendChild(host);
+    const seen = new Set();
+    const hrefs = new Set();
+    let bad = 0;
+    for (const ch of mods) {
+      for (const time of ['night', 'evening', 'morning']) {
+        const st = { flags: {}, time, legacy: {}, location: '' };
+        const cls = ch.sceneClasses ? ch.sceneClasses(st) : [];
+        for (const [loc, L] of Object.entries(ch.locations || {})) {
+          const id = L.scene(st);
+          if (!scenes[id]) { bad++; log(false, `картинки: ${ch.id}/${loc} ведёт на несуществующую сцену ${id}`); continue; }
+          const key = `${id}|${cls.join(',')}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          host.innerHTML = `<svg class="${['scene', ...cls].join(' ')}" viewBox="0 0 1600 900" width="1600" height="900">${game.stage.markup(id)}</svg>`;
+          const imgs = [...host.querySelectorAll('.art image')].filter((i) => {
+            for (let el = i; el && el !== host; el = el.parentElement) {
+              const c = getComputedStyle(el);
+              if (c.display === 'none' || c.opacity === '0' || c.visibility === 'hidden') return false;
+            }
+            return true;
+          });
+          imgs.forEach((i) => hrefs.add(i.getAttribute('href')));
+          if (!imgs.some((i) => +i.getAttribute('width') > 1200 && +i.getAttribute('height') > 600)) { bad++; log(false, `картинки: ${ch.id}/${loc} (${time}) — сцена ${id} без фона`); }
+        }
+      }
+    }
+    host.remove();
+    for (const h of hrefs) {
+      const r = await fetch(h, { method: 'HEAD' });
+      if (!r.ok) { bad++; log(false, `картинки: нет файла ${h}`); }
+    }
+    check(bad === 0, `картинки: ${seen.size} состояний сцен, ${hrefs.size} файлов — фон виден, всё загружается`);
+  }
   const steps = [
     ['ch1', () => chapters.ch1()],
     ['ch2', () => chapters.ch2()],
