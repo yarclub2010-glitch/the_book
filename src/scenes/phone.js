@@ -21,13 +21,32 @@ const HEAD = PHONE.y + 128; // шапка ниже плашки загадки
 
 function build(withToday) {
   const { x, y, w, h } = PHONE;
-  let s = `<defs><filter id="ph-blur"><feGaussianBlur stdDeviation="14"/></filter></defs>`;
+  let s = `<defs><filter id="ph-blur"><feGaussianBlur stdDeviation="14"/></filter>
+    <linearGradient id="ph-rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b5c66"/><stop offset="0.35" stop-color="#1c1d22"/><stop offset="0.7" stop-color="#3a3b44"/><stop offset="1" stop-color="#121216"/></linearGradient>
+    <linearGradient id="ph-screen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#191a24"/><stop offset="1" stop-color="#101118"/></linearGradient>
+    <linearGradient id="ph-glare" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.07"/><stop offset="0.38" stop-color="#fff" stop-opacity="0.02"/><stop offset="0.4" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <radialGradient id="ph-spill"><stop offset="0" stop-color="#7d6cff" stop-opacity="0.16"/><stop offset="1" stop-color="#7d6cff" stop-opacity="0"/></radialGradient>
+    <filter id="ph-shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity="0.7"/></filter></defs>`;
   s += BG.image('filter="url(#ph-blur)"');
   s += '<rect width="1600" height="900" fill="#05060a" opacity="0.55"/>';
-  s += `<rect x="${x - 10}" y="${y - 10}" width="${w + 20}" height="${h + 20}" rx="54" fill="#0b0b0f" stroke="#3a3a42" stroke-width="3"/>`;
-  s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="44" fill="#14151c"/>`;
+  // свет экрана ложится на кухню вокруг
+  s += `<ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w * 1.2}" ry="${h * 0.75}" fill="url(#ph-spill)"/>`;
+  // корпус: металлическая рамка, кнопки сбоку
+  s += `<rect x="${x + w + 8}" y="${y + 190}" width="5" height="90" rx="2.5" fill="#2a2b31"/>`;
+  s += `<rect x="${x - 13}" y="${y + 160}" width="5" height="54" rx="2.5" fill="#2a2b31"/><rect x="${x - 13}" y="${y + 228}" width="5" height="54" rx="2.5" fill="#2a2b31"/>`;
+  s += `<rect x="${x - 10}" y="${y - 10}" width="${w + 20}" height="${h + 20}" rx="56" fill="url(#ph-rim)" filter="url(#ph-shadow)"/>`;
+  s += `<rect x="${x - 6}" y="${y - 6}" width="${w + 12}" height="${h + 12}" rx="51" fill="#050507"/>`;
+  s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="44" fill="url(#ph-screen)"/>`;
+  // статус-бар: время, связь, батарея; вырез камеры
+  const sb = y + 38;
+  s += `<text x="${x + 44}" y="${sb}" font-family="Rubik, sans-serif" font-weight="600" font-size="19" fill="#e9e9f2">${withToday ? '19:06' : '18:52'}</text>`;
+  s += `<rect x="${x + w / 2 - 58}" y="${y + 16}" width="116" height="32" rx="16" fill="#000"/><circle cx="${x + w / 2 + 38}" cy="${y + 32}" r="6" fill="#0d0f1a" stroke="#1d2233" stroke-width="2"/>`;
+  s += [0, 1, 2, 3].map((i) => `<rect x="${x + w - 128 + i * 7}" y="${sb - 6 - i * 3}" width="4.5" height="${6 + i * 3}" rx="1" fill="${i < 3 ? '#e9e9f2' : '#5a5a66'}"/>`).join('');
+  s += `<rect x="${x + w - 88}" y="${sb - 14}" width="34" height="16" rx="4.5" fill="none" stroke="#9a9aa8" stroke-width="1.6"/><rect x="${x + w - 85}" y="${sb - 11}" width="9" height="10" rx="2" fill="#ff6b5a"/><rect x="${x + w - 53}" y="${sb - 9}" width="2.5" height="6" rx="1" fill="#9a9aa8"/>`;
   s += `<text x="${x + 34}" y="${HEAD}" font-family="Rubik, sans-serif" font-size="22" fill="#9f8cff">‹ Кухня</text>`;
-  s += `<text x="${x + w / 2}" y="${HEAD}" text-anchor="middle" font-family="Rubik, sans-serif" font-weight="700" font-size="30" fill="#fff">Мири</text>`;
+  // значок приложения: кольцо колонки
+  s += `<ellipse cx="${x + w / 2 - 52}" cy="${HEAD - 9}" rx="13" ry="5" fill="none" stroke="#9f8cff" stroke-width="2.4"/>`;
+  s += `<text x="${x + w / 2 + 12}" y="${HEAD}" text-anchor="middle" font-family="Rubik, sans-serif" font-weight="700" font-size="30" fill="#fff">Мири</text>`;
   s += `<text x="${x + w / 2}" y="${HEAD + 40}" text-anchor="middle" font-family="Rubik, sans-serif" font-size="20" fill="#8a8a99">История · кухня · фразы не распознаны</text>`;
   const list = ENTRIES.filter((e) => withToday || !e.fresh);
   list.forEach((e, i) => {
@@ -37,10 +56,14 @@ function build(withToday) {
     s += `<text x="${c.x + 24}" y="${c.y + 34}" font-family="Rubik, sans-serif" font-size="19" fill="#8a8a99">${e.date} · ${e.time}</text>`;
     s += `<text x="${c.x + 24}" y="${c.y + 82}" font-family="Rubik, sans-serif" font-weight="700" font-size="34" fill="#f2f2f7">${e.text}</text>`;
     s += `<circle cx="${c.x + c.w - 40}" cy="${c.y + c.h / 2}" r="20" fill="none" stroke="#9f8cff" stroke-width="2.5"/><path d="M${c.x + c.w - 46} ${c.y + c.h / 2 - 9} l14 9 l-14 9z" fill="#9f8cff"/>`;
+    s += `<text x="${c.x + c.w - 40}" y="${c.y + c.h - 10}" text-anchor="middle" font-family="Rubik, sans-serif" font-size="14" fill="#6b6b78">0:0${e.id === '20' ? 3 : 1}</text>`;
     s += '</g>';
   });
   const last = card(list.length);
   s += `<text x="${x + w / 2}" y="${last.y + 40}" text-anchor="middle" font-family="Rubik, sans-serif" font-size="19" fill="#6b6b78">Остальные вечера — тишина</text>`;
+  // полоска «домой» и блик на стекле — поверх всего экрана, щелчки не ловит
+  s += `<rect x="${x + w / 2 - 70}" y="${y + h - 22}" width="140" height="6" rx="3" fill="#e9e9f2" opacity="0.55"/>`;
+  s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="44" fill="url(#ph-glare)" pointer-events="none"/>`;
   return s;
 }
 

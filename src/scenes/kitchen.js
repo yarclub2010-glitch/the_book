@@ -58,11 +58,20 @@ function letterLayout(world) {
 function letters(world) {
   const fw = world === 'np' ? 'np' : 'p';
   const stroke = fw === 'p' ? '#1b1438' : '#2a2018';
+  // мир НП: лампа слева — чем правее и ниже буква, тем глубже она в тени дверцы
+  const shade = (pos) => {
+    if (world !== 'np') return '';
+    const t = Math.min(1, Math.max(0, (pos[0] - xs[0]) / (xs[1] - xs[0] || 1)));
+    const v = Math.min(1, Math.max(0, (pos[1] - ys[0]) / (ys[1] - ys[0] || 1)));
+    return ` style="filter:brightness(${(1 - 0.42 * t - 0.12 * v).toFixed(2)})"`;
+  };
   const one = (l, pos, rot, cls) => {
     const extra = l.dx !== undefined ? ` data-dx="${l.dx.toFixed(1)}" data-dy="${l.dy.toFixed(1)}"` : '';
-    return `<g class="mag${cls}" data-ch="${l.ch}"${extra}><g transform="translate(${pos[0].toFixed(1)} ${pos[1].toFixed(1)}) rotate(${rot})"><text fill="${l.color}" stroke="${stroke}" stroke-width="${fw === 'p' ? 2.2 * layout[0].size / 60 + 0.8 : 1}">${l.ch}</text></g></g>`;
+    return `<g class="mag${cls}" data-ch="${l.ch}"${extra}${shade(pos)}><g transform="translate(${pos[0].toFixed(1)} ${pos[1].toFixed(1)}) rotate(${rot})"><text fill="${l.color}" stroke="${stroke}" stroke-width="${fw === 'p' ? 2.2 * layout[0].size / 60 + 0.8 : 1}">${l.ch}</text><text fill="url(#mag-shine)" stroke="none">${l.ch}</text></g></g>`;
   };
   const layout = letterLayout(world);
+  const xs = [Math.min(...layout.map((l) => l.home[0])), Math.max(...layout.map((l) => l.home[0]))];
+  const ys = [Math.min(...layout.map((l) => l.home[1])), Math.max(...layout.map((l) => l.home[1]))];
   let s = `<g class="letters" font-family="Rubik, 'Arial Black', sans-serif" font-weight="900" font-size="${layout[0].size.toFixed(1)}" text-anchor="middle" style="filter:url(#k${fw}-mag)${world === 'np' ? ' brightness(0.82) saturate(0.8)' : ''}">`;
   for (const l of layout) {
     if (l.moved) {
@@ -86,15 +95,30 @@ function anchor(B, id, [x0, y0, x1, y1]) {
     <text class="anchor-ne" x="${c[0]}" y="${a[1] + h * 0.86}" text-anchor="middle" font-family="Caveat, cursive" font-size="${(h * 0.34).toFixed(1)}" fill="#1a1020" stroke="#fffbe8" stroke-width="0.6" opacity="0.9">Не</text>`;
 }
 
-// Бумажка на дверце холодильника
-function paper(B, [x, y, w, h], rot, fill, lines, size) {
+// Магнитик, который держит бумажку: круглый, с бликом и тенью
+function magnet([x, y], color = '#b8322a') {
+  return `<circle cx="${(x + 1.2).toFixed(1)}" cy="${(y + 2).toFixed(1)}" r="5.2" fill="#000" opacity="0.35"/>`
+    + `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${color}"/>`
+    + `<circle cx="${(x - 1.5).toFixed(1)}" cy="${(y - 1.6).toFixed(1)}" r="1.6" fill="#fff" opacity="0.45"/>`;
+}
+
+// Бумажка на дверце холодильника: не белый прямоугольник, а лист — фактура, свет гаснет к краю,
+// уголок чуть отогнут, держится на магнитике, написано шариковой ручкой
+function paper(B, [x, y, w, h], rot, fill, lines, size, ink = '#27325c') {
   const [p, q] = [B.I(x, y), B.I(x + w, y + h)];
   const [pw, ph] = [q[0] - p[0], q[1] - p[1]];
+  const [x1, y1] = [p[0] + pw, p[1] + ph];
+  const c = 7; // отогнутый уголок
+  const shape = `M${p[0]} ${p[1]} H${x1} V${y1 - c} L${x1 - c} ${y1} H${p[0]} Z`;
   let s = `<g transform="rotate(${rot} ${p[0].toFixed(1)} ${p[1].toFixed(1)})">`;
-  s += `<rect x="${p[0]}" y="${p[1]}" width="${pw}" height="${ph}" fill="${fill}" filter="url(#paper-shadow)"/>`;
+  s += `<path d="${shape}" fill="${fill}" filter="url(#paper-tex)"/>`;
+  s += `<path d="${shape}" fill="url(#paper-light)"/>`;
+  s += `<path d="M${x1} ${y1 - c} L${x1 - c} ${y1 - c * 0.35} L${x1 - c} ${y1} Z" fill="#000" opacity="0.18"/>`;
   lines.forEach((t, i) => {
-    s += `<text x="${p[0] + 7}" y="${p[1] + size + 4 + i * (size + 2)}" font-family="Caveat, cursive" font-size="${size}" fill="#2a2a2a">${t}</text>`;
+    const ty = p[1] + size + 5 + i * (size + 2);
+    s += `<text x="${p[0] + 7}" y="${ty}" font-family="Caveat, cursive" font-size="${size}" fill="${ink}" opacity="0.88" transform="rotate(${i % 2 ? 0.8 : -0.6} ${p[0] + 7} ${ty})">${t}</text>`;
   });
+  s += magnet([p[0] + pw / 2, p[1] + 3]);
   return s + '</g>';
 }
 
@@ -102,6 +126,25 @@ function commonDefs(world) {
   return `<defs>
     <filter id="k${world}-mag" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="1.5" dy="2.5" stdDeviation="1.4" flood-color="#000" flood-opacity="${world === 'p' ? 0.35 : 0.6}"/></filter>
     <filter id="paper-shadow" x="-10%" y="-10%" width="130%" height="140%"><feDropShadow dx="2" dy="3" stdDeviation="2" flood-opacity="0.45"/></filter>
+    <!-- бумага: зерно и неровный тон + мягкая тень на дверце -->
+    <filter id="paper-tex" x="-10%" y="-10%" width="130%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.35  0 0 0 0 0.28  0 0 0 0 0.2  0 0 0 0.28 0" result="grain"/>
+      <feComposite in="grain" in2="SourceGraphic" operator="in" result="g"/>
+      <feBlend in="g" in2="SourceGraphic" mode="multiply" result="t"/>
+      <feDropShadow in="t" dx="1.6" dy="2.6" stdDeviation="1.8" flood-opacity="0.5"/>
+    </filter>
+    <linearGradient id="paper-light" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.08"/><stop offset="0.6" stop-color="#3a2a18" stop-opacity="0.08"/><stop offset="1" stop-color="#2a1a0c" stop-opacity="0.3"/></linearGradient>
+    <!-- восковой мелок: линия дрожит и местами рвётся -->
+    <filter id="crayon" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="2" result="w"/>
+      <feDisplacementMap in="SourceGraphic" in2="w" scale="1.6" result="d"/>
+      <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="9" result="gaps"/>
+      <feColorMatrix in="gaps" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.8 -0.25" result="m"/>
+      <feComposite in="d" in2="m" operator="in"/>
+    </filter>
+    <!-- блик на пластиковой букве-магните -->
+    <linearGradient id="mag-shine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.42"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.06"/><stop offset="1" stop-color="#000" stop-opacity="0.18"/></linearGradient>
     <radialGradient id="k${world}-photo-g"><stop offset="0" stop-color="#fff3c4" stop-opacity="0.9"/><stop offset="1" stop-color="#fff3c4" stop-opacity="0"/></radialGradient>
     <radialGradient id="k${world}-lamp"><stop offset="0" stop-color="#ffc26b" stop-opacity="0.25"/><stop offset="1" stop-color="#ffc26b" stop-opacity="0"/></radialGradient>
     <radialGradient id="k${world}-dawn"><stop offset="0" stop-color="#f6d3a0" stop-opacity="0.45"/><stop offset="0.6" stop-color="#f3c58a" stop-opacity="0.15"/><stop offset="1" stop-color="#f3c58a" stop-opacity="0"/></radialGradient>
@@ -140,13 +183,15 @@ function buildNP(time) {
   s += miri(B);
   s += sillBook(B);
   // на морозилке: детский рисунок и мамина записка (в главе 2 — другая: мама на смене)
+  // всё бумажное — под свет кухни: ночью лампа тёплая и тусклая, утром светлее
+  const light = time === 'morning' ? 'brightness(0.88) sepia(0.25)' : 'brightness(0.66) sepia(0.45)';
+  s += `<g class="np-props" style="filter:${light}">`;
   s += drawing(B);
-  s += `<g class="note-a">${paper(B, [1128, 262, 96, 66], 3, '#fff8d8', ['Суп в кастрюле.', 'Я у тёти Гали,', 'буду в 9. Мама'], 13)}</g>`;
-  s += `<g class="note-b">${paper(B, [1128, 262, 96, 66], -2, '#fff8d8', ['Я на смене', 'до утра. Ужин', 'в холодильнике.'], 12)}</g>`;
+  s += `<g class="note-a">${paper(B, [1128, 262, 96, 66], 3, '#efe6c8', ['Суп в кастрюле.', 'Я у тёти Гали,', 'буду в 9. Мама'], 13)}</g>`;
+  s += `<g class="note-b">${paper(B, [1128, 262, 96, 66], -2, '#efe6c8', ['Я на смене', 'до утра. Ужин', 'в холодильнике.'], 12)}</g>`;
   // нераспечатанное письмо из Петербурга на столе
-  s += `<g transform="rotate(-8 ${B.I(530, 600)})"><polygon points="${B.I(515, 590)} ${B.I(598, 588)} ${B.I(604, 622)} ${B.I(508, 625)}" fill="#e9e1cc" filter="url(#paper-shadow)"/>`;
-  s += `<polyline points="${B.I(515, 590)} ${B.I(557, 610)} ${B.I(598, 588)}" fill="none" stroke="#9a8f7c" stroke-width="1.2"/>`;
-  s += `<rect x="${B.I(583, 594)[0]}" y="${B.I(583, 594)[1]}" width="10" height="12" fill="#3a6fb0"/></g>`;
+  s += envelope(B);
+  s += '</g>';
   s += letters('np');
   if (night) s += `<rect width="1600" height="900" fill="#0a1020" opacity="0.18"/>`;
   return s;
@@ -177,26 +222,68 @@ function sillBook(B) {
   // книгу сдвинули в другом мире (класс book-shifted) — у нас она тоже съехала и повёрнута
   const [px, py] = B.I(552, 484);
   return `<g class="sill-book"><g class="sill-book-pose" style="transform-origin:${px.toFixed(0)}px ${py.toFixed(0)}px">
-    <defs><linearGradient id="sb-cloth" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2c3a52"/><stop offset="1" stop-color="#141b28"/></linearGradient>
+    <defs><linearGradient id="sb-cloth" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2d3646"/><stop offset="0.55" stop-color="#232a37"/><stop offset="1" stop-color="#151a22"/></linearGradient>
+    <linearGradient id="sb-lamp" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffb96b" stop-opacity="0"/><stop offset="1" stop-color="#ffb96b" stop-opacity="0.22"/></linearGradient>
+    <linearGradient id="sb-pages" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2d0" stop-opacity="0.35"/><stop offset="1" stop-color="#3a2a14" stop-opacity="0.35"/></linearGradient>
     <filter id="sb-blur"><feGaussianBlur stdDeviation="4"/></filter></defs>
     <ellipse cx="${sx}" cy="${sy}" rx="${62 * B.k}" ry="${7 * B.k}" fill="#000" opacity="0.55" filter="url(#sb-blur)"/>
-    <polygon points="${side}" fill="#cbbd9c"/>
-    <polygon points="${top.join(' ')}" fill="url(#sb-cloth)" stroke="#0e131c" stroke-width="1.2"/>
-    <polygon points="${[top[0], top[3], bottom[3], bottom[0]].join(' ')}" fill="#101622"/>
-    <polygon points="${top.join(' ')}" fill="#ffb96b" opacity="0.12"/>
+    <polygon points="${side}" fill="#b9a883"/>
+    <polygon points="${side}" fill="url(#sb-pages)"/>
+    <polygon points="${top.join(' ')}" fill="url(#sb-cloth)" stroke="#0e131c" stroke-width="1" filter="url(#paper-tex)"/>
+    <polygon points="${[top[0], top[3], bottom[3], bottom[0]].join(' ')}" fill="#0e131d"/>
+    <polygon points="${top.join(' ')}" fill="url(#sb-lamp)"/>
+    <!-- потёртые углы и закладки, как на крупном плане -->
+    <polyline points="${top[0]} ${top[1]}" stroke="#6f7a8c" stroke-width="1" opacity="0.5" fill="none"/>
+    <polygon points="${B.I(566, 490)} ${B.I(574, 490)} ${B.I(575, 497)} ${B.I(567, 498)}" fill="#e2d3ae"/>
+    <polygon points="${B.I(583, 489)} ${B.I(590, 488)} ${B.I(592, 494)} ${B.I(584, 495)}" fill="#d8c69c"/>
   </g></g>`;
 }
 
-// Детский рисунок: дом, поезд над крышей, четыре человечка, один зачёркнут
+// Детский рисунок: дом, поезд над крышей, четыре человечка, один зачёркнут — восковыми мелками
+// на пожелтевшем листе, прижат магнитиком
 function drawing(B) {
   const [p, q] = [B.I(1016, 250), B.I(1106, 345)];
   const rot = `rotate(-5 ${p[0].toFixed(1)} ${p[1].toFixed(1)})`;
   const k = (q[0] - p[0]) / 90;
   const X = (v) => (p[0] + v * k).toFixed(1);
   const Y = (v) => (p[1] + v * k).toFixed(1);
-  const people = [0, 1, 2, 3].map((i) => `<path d="M${X(22 + i * 14)} ${Y(92)} v-14 m0 -5 a3.5 3.5 0 1 0 0.1 0" stroke="#2a2a2a"/>`).join('');
-  return `<g transform="${rot}"><rect x="${p[0]}" y="${p[1]}" width="${q[0] - p[0]}" height="${q[1] - p[1]}" fill="#fbf6ea" filter="url(#paper-shadow)"/>
-    <g stroke-width="2" fill="none"><path d="M${X(12)} ${Y(62)} h40 v-24 l-20 -16 l-20 16 z" stroke="#3a6fb0"/><path d="M${X(6)} ${Y(12)} h70" stroke="#2a2a2a"/><path d="M${X(14)} ${Y(4)} h26 v8 h-26 z" stroke="#e2582f"/>${people}<path d="M${X(58)} ${Y(96)} l10 -20 M${X(68)} ${Y(96)} l-10 -20" stroke="#d9402a"/></g></g>`;
+  const people = [0, 1, 2, 3].map((i) => `<path d="M${X(18 + i * 14)} ${Y(96)} l4 -8 l4 8 M${X(22 + i * 14)} ${Y(88)} v-9 M${X(17 + i * 14)} ${Y(83)} h10"/><circle cx="${X(22 + i * 14)}" cy="${Y(75)}" r="${(3.6 * k).toFixed(1)}"/>`).join('');
+  const W = q[0] - p[0];
+  const H = q[1] - p[1];
+  const sheet = `M${p[0]} ${p[1]} h${W} v${H - 6} l-6 6 h${-(W - 6)} z`;
+  return `<g transform="${rot}">
+    <path d="${sheet}" fill="#efe4c6" filter="url(#paper-tex)"/>
+    <path d="${sheet}" fill="url(#paper-light)"/>
+    <g fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" filter="url(#crayon)" opacity="0.9">
+      <path d="M${X(12)} ${Y(62)} h40 v-24 l-20 -16 l-20 16 z" stroke="#2f5d9e"/>
+      <path d="M${X(24)} ${Y(62)} v-10 h8 v10" stroke="#8a5a2b"/>
+      <path d="M${X(4)} ${Y(13)} h74" stroke="#3b3b3b"/>
+      <path d="M${X(14)} ${Y(5)} h28 v8 h-28 z" stroke="#d2552e"/>
+      <path d="M${X(18)} ${Y(15)} a2 2 0 1 0 0.1 0 M${X(36)} ${Y(15)} a2 2 0 1 0 0.1 0" stroke="#3b3b3b"/>
+      <g stroke="#3b3b3b">${people}</g>
+      <path d="M${X(58)} ${Y(97)} l10 -21 M${X(68)} ${Y(97)} l-10 -21" stroke="#c7362a" stroke-width="2.2"/>
+    </g>
+    ${magnet([p[0] + W / 2, p[1] + 3], '#2b5fa8')}
+  </g>`;
+}
+
+// Нераспечатанное письмо из Петербурга: конверт с маркой, штемпелем и адресом «от руки»
+function envelope(B) {
+  const pts = [B.I(515, 590), B.I(598, 588), B.I(604, 622), B.I(508, 625)].map((v) => v.map((n) => n.toFixed(1)).join(' ')).join(' ');
+  const [sx, sy] = B.I(582, 593);
+  const [ax, ay] = B.I(522, 606);
+  return `<g transform="rotate(-8 ${B.I(530, 600)})">
+    <polygon points="${pts}" fill="#ddd2b6" filter="url(#paper-tex)"/>
+    <polygon points="${pts}" fill="url(#paper-light)"/>
+    <rect x="${sx}" y="${sy}" width="10" height="12" fill="#f4efe2" stroke="#f4efe2" stroke-width="1.4" stroke-dasharray="1 1"/>
+    <rect x="${sx + 1.4}" y="${sy + 1.4}" width="7.2" height="9.2" fill="#3f6a9c"/>
+    <circle cx="${sx - 2}" cy="${sy + 7}" r="6" fill="none" stroke="#5a4a6a" stroke-width="0.8" opacity="0.6"/>
+    <g stroke="#2f3a60" stroke-width="0.9" opacity="0.65" fill="none" stroke-linecap="round">
+      <path d="M${ax} ${ay} q6 -1.2 12 0 t12 0 t9 0"/>
+      <path d="M${ax + 2} ${ay + 5} q6 -1 12 0 t14 0"/>
+      <path d="M${ax + 4} ${ay + 10} q6 -1 12 0 t8 0"/>
+    </g>
+  </g>`;
 }
 
 // ---------- Мир «Приходи» ----------
@@ -206,7 +293,7 @@ function buildP(withTwin) {
   // всё, что лежит поверх картинки; ночью (кадр с двойником) — приглушено под свет сцены
   let o = '';
   o += anchor(B, 'kp-photo', [869, 126, 912, 178]);
-  o += paper(B, [1150, 196, 86, 48], -3, '#fff', ['Купи хлеб!!', '— В.'], 13);
+  o += paper(B, [1150, 196, 86, 48], -3, '#fbf3ee', ['Купи хлеб!!', '— В.'], 13, '#5a2a6a');
   if (!withTwin) o += letters('pw');
   return s + (withTwin ? `<g style="filter:brightness(0.5) saturate(0.7) hue-rotate(20deg)">${o}</g>` : o);
 }
