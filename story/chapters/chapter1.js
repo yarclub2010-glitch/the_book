@@ -206,7 +206,7 @@ export default {
         ['set', { uhodi: true }],
         ['wait', 1.2],
         ['say', 'x', 'У. Х. О. Д. И. Крупно и ровно. Даже призрак прочтёт.'],
-        ['scene', 'kitchen-p', { shot: 'window', transition: 'cross', dur: 1.6 }],
+        ['scene', 'kitchen-p', { shot: 'sill', transition: 'cross', dur: 1.6 }],
         ['think', 'Верина книга на подоконнике. Разбухшая, волнами. Шесть лет тут лежит — и никто её не убирает.'],
         ['say', 'x', 'Слышишь? УХОДИ.'],
         ['wait', 1],
