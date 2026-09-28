@@ -4,6 +4,7 @@
 // Сюжет открывается находками: флажки состояния → правила главы запускают сценки.
 
 import { audio } from './audio.js';
+import { lifeFor } from '../scenes/ambient.js';
 import { Stage, titleBackdrop } from './stage.js';
 import { scenes } from '../scenes/index.js';
 import chapter1 from '../../story/chapters/chapter1.js';
@@ -687,6 +688,7 @@ export class Game {
 
   tick() {
     if (!this.state || this.mode !== 'explore' || this.panelOpen() || document.hidden) return;
+    this.lifeTick();
     const s = this.state;
     for (const t of this.chapter.timers || []) {
       // таймер запустил сценку (например, 6:40 — гудки) — остальные в этом такте ждут:
@@ -706,6 +708,34 @@ export class Game {
         }
       }
     }
+  }
+
+  // Жизнь локации: пока игрок осматривается, в сцене иногда что-то случается само —
+  // проезжает машина, стучит батарея, мигает бра (список — в scenes/ambient.js)
+  lifeTick() {
+    const sc = this.stage.scene;
+    const root = this.stage.root;
+    if (!sc || !root) return;
+    const list = lifeFor(sc.id);
+    if (!list.length) return;
+    if (this.lifeScene !== sc.id) {
+      this.lifeScene = sc.id;
+      // первое событие — не сразу после входа
+      this.lifeDue = list.map((e) => rand(e.every) * 0.6 + 6);
+    }
+    list.forEach((e, i) => {
+      this.lifeDue[i] -= 1;
+      if (this.lifeDue[i] > 0) return;
+      this.lifeDue[i] = rand(e.every);
+      if (e.when && !root.classList.contains(e.when)) return;
+      if (e.sfx) audio.sfx(e.sfx);
+      if (e.cls) {
+        root.classList.remove(e.cls);
+        void root.getBoundingClientRect();
+        root.classList.add(e.cls);
+        setTimeout(() => root.classList.remove(e.cls), e.dur * 1000);
+      }
+    });
   }
 
   fire(t) {

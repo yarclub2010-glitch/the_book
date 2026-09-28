@@ -26,7 +26,7 @@ export default {
     room: { name: 'Комната Тихона', scene: (s) => `room-np-${s.time}`, music: () => 'np-night' },
     hall: { name: 'Коридор', scene: (s) => `hall-np-${s.time}`, music: () => 'np-night' },
     kitchen: { name: 'Кухня', scene: (s) => `kitchen-np-${s.time}`, music: () => 'np-night' },
-    vera: { name: 'Комната Веры', scene: () => 'vera-np', music: () => 'np-morning' },
+    vera: { name: 'Комната Веры', scene: () => 'vera-np', music: () => 'np-night' },
     book: { name: 'Книга', hidden: true, scene: () => 'book-np', music: () => 'np-night' },
   },
 

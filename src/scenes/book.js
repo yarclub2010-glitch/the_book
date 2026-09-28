@@ -132,7 +132,7 @@ export const bookNP = {
     left: B.shot((lx0 + lx1) / 2 - 60, (ly0 + ly1) / 2, 760),
     right: B.shot(Math.min((rx0 + rx1) / 2 + 60, 1376 - 380), (ry0 + ry1) / 2, 760),
   },
-  ambience: ['fridge', 'clock'],
+  ambience: ['fridge', 'clock', 'drizzle'],
   build: () => build(false),
   hotspots: [
     { id: 'pageL', label: 'Опыт №7', shot: '', shape: B.rect(...LAYOUT.left), lines: [] },

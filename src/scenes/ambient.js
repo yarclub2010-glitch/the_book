@@ -120,6 +120,38 @@ function curtain(key, P, poly, [tx, ty]) {
     + `<g clip-path="url(#${id})"><g class="amb-sway" style="transform-origin:${n(ox)}px ${n(oy)}px">${P.image()}</g></g>`;
 }
 
+// Свет фар с улицы: светлая косая полоса проходит по стене (включается событием life-car)
+function sweep(key, P, [x0, y0, x1, y1], color = '#fff1d6', o = 0.13) {
+  const id = `amb-${key}-sweep`;
+  const [ax, ay] = P.I(x0, y0);
+  const [bx, by] = P.I(x1, y1);
+  const w = 150 * P.k;
+  return `<defs><clipPath id="${id}"><rect x="${n(ax)}" y="${n(ay)}" width="${n(bx - ax)}" height="${n(by - ay)}"/></clipPath>`
+    + `<linearGradient id="${id}-g" x1="0" x2="1"><stop offset="0" stop-color="${color}" stop-opacity="0"/><stop offset="0.5" stop-color="${color}" stop-opacity="1"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>`
+    + `<g clip-path="url(#${id})"><g class="amb-car" style="--d:${n(bx - ax + w * 2)}px;--o:${o};mix-blend-mode:screen">`
+    + `<polygon points="${n(ax - w * 1.6)},${n(ay)} ${n(ax - w * 0.6)},${n(ay)} ${n(ax - w)},${n(by)} ${n(ax - w * 2)},${n(by)}" fill="url(#${id}-g)"/></g></g>`;
+}
+
+// Ночная бабочка кружит у лампы: то прилетает, то пропадает в темноте (SMIL — в своей системе координат)
+function moth(P, [cx, cy], rx, ry, seed) {
+  const r = A.rng(seed);
+  const [x, y] = P.I(cx, cy);
+  const k = P.k;
+  const t = n(2.8 + r() * 1.2);
+  return `<g class="amb-moth" opacity="0"><animate attributeName="opacity" values="0;0.85;0.85;0;0" keyTimes="0;0.05;0.42;0.47;1" dur="${n(24 + r() * 8)}s" begin="${n(-r() * 20)}s" repeatCount="indefinite"/>`
+    + `<g transform="translate(${n(x)} ${n(y)})"><g><animateMotion dur="${t}s" repeatCount="indefinite" path="M${n(rx * k)} 0 A${n(rx * k)} ${n(ry * k)} 0 1 1 ${n(-rx * k)} 0 A${n(rx * k)} ${n(ry * k)} 0 1 1 ${n(rx * k)} 0"/>`
+    + `<g><animateTransform attributeName="transform" type="scale" values="1 1;1 0.25;1 1" dur="0.11s" repeatCount="indefinite"/>`
+    + `<ellipse cx="${n(-2.6 * k)}" cy="0" rx="${n(3.4 * k)}" ry="${n(2 * k)}" fill="#3a2d20"/><ellipse cx="${n(2.6 * k)}" cy="0" rx="${n(3.4 * k)}" ry="${n(2 * k)}" fill="#3a2d20"/>`
+    + '</g></g></g></g>';
+}
+
+// Огонёк прибора: мигает в своём ритме
+function led(P, [px, py], color, t, lo = 0.15) {
+  const [x, y] = P.I(px, py);
+  return `<circle class="amb-led" cx="${n(x)}" cy="${n(y)}" r="${n(2.2 * P.k)}" fill="${color}" style="--t:${t}s;--lo:${lo}"/>`
+    + `<circle class="amb-led" cx="${n(x)}" cy="${n(y)}" r="${n(7 * P.k)}" fill="${color}" opacity="0.25" style="--t:${t}s;--lo:0;mix-blend-mode:screen"/>`;
+}
+
 const wrap = (s) => (s ? `<g class="ambient" pointer-events="none" aria-hidden="true">${s}</g>` : '');
 
 // ---------- Сцены ----------
@@ -128,9 +160,14 @@ const wrap = (s) => (s ? `<g class="ambient" pointer-events="none" aria-hidden="
 const KNP_GLASS = [[88, 12, 340, 575], [392, 112, 530, 488]];
 function kitchenNP(time) {
   const P = IMG.knp;
-  let s = drops(P, KNP_GLASS, 12, 41);
+  // утром стекло сухое — дождь был ночью
+  let s = time === 'morning' ? '' : drops(P, KNP_GLASS, 12, 41);
   s += motes(P, [590, 300, 800, 520], 10, 42, '#ffe2a8', 0.5);
   if (time === 'morning') s += steam(P, [786, 512], 43);
+  else {
+    s += moth(P, [690, 300], 70, 26, 44);
+    s += sweep('knp', P, [560, 0, 1376, 430]);
+  }
   return s;
 }
 
@@ -140,8 +177,11 @@ function kitchenP(key, P, evening) {
   let s = streaks(key, P, KP_GLASS, 14, 51);
   s += drops(P, KP_GLASS, 9, 52, true);
   s += curtain(key, P, [[56, 0], [250, 0], [250, 474], [150, 470], [72, 440], [56, 380]], [150, 0]);
-  // вечером солнечный блик на стене тихо «дышит»
-  if (evening) s += glow(key, P, [995, 285], 120, '#ffb58c', 0.05, 0.22, 7);
+  // вечером солнечный блик на стене тихо «дышит», над тремя кружками пар
+  if (evening) {
+    s += glow(key, P, [995, 285], 120, '#ffb58c', 0.05, 0.22, 7);
+    [[700, 372], [742, 366], [788, 374]].forEach((m, i) => { s += steam(P, m, 55 + i).replace(/#f3e9d8/g, '#fbe9f2'); });
+  }
   return s;
 }
 
@@ -201,8 +241,8 @@ const BUILD = {
   },
 
   // Комната Тихона НП (R-NP-1): экран ноутбука чуть дрожит (пыль и лампа — уже в сцене)
-  'room-np-night': () => screen(IMG.rnp),
-  'room-np-evening': () => screen(IMG.rnp),
+  'room-np-night': () => screen(IMG.rnp) + sweep('rnp', IMG.rnp, [760, 0, 1376, 330]),
+  'room-np-evening': () => screen(IMG.rnp) + sweep('rnp', IMG.rnp, [760, 0, 1376, 330]),
   // Утро (R-NP-1-morning): пылинки плывут в косом луче из окна
   'room-np-morning': () => {
     const P = IMG.rnpm;
@@ -221,11 +261,16 @@ const BUILD = {
   'room-p': () => {
     const P = IMG.rp;
     const glass = [[6, 6, 284, 318]];
-    return streaks('rp', P, glass, 10, 141) + drops(P, glass, 6, 142, true) + steam(P, [488, 440], 143).replace(/#f3e9d8/g, '#e9e2f4');
+    // огоньки приборов на полке и у паяльной станции, шкала приёмника, лупа с подсветкой
+    const leds = led(P, [1068, 42], '#7dff9a', 3.1) + led(P, [1236, 30], '#ff5a5a', 1.7, 0.4) + led(P, [1182, 44], '#ffc861', 5.3) + led(P, [508, 492], '#ff6a4a', 2.3, 0.5);
+    const radio = `<g class="amb-radio">${glow('rp-radio', P, [775, 470], 34, '#ffb060', 0.25, 0.5, 5)}</g>`;
+    const puff = `<g class="amb-puff">${steam(P, [488, 440], 145).replace(/#f3e9d8/g, '#f1ecfa')}</g>`;
+    return streaks('rp', P, glass, 10, 141) + drops(P, glass, 6, 142, true) + steam(P, [488, 440], 143).replace(/#f3e9d8/g, '#e9e2f4')
+      + glow('rp-lens', P, [265, 445], 80, '#fff2c8', 0.18, 0.34, 6) + leds + radio + puff;
   },
 
   // Комната Веры НП (V-NP-1-off): пыль в свете настольной лампы (ночник и пыль у кровати — уже в сцене)
-  'vera-np': () => motes(IMG.vnp, [1085, 345, 1225, 450], 10, 151, '#ffe6b0', 0.5),
+  'vera-np': () => motes(IMG.vnp, [1085, 345, 1225, 450], 10, 151, '#ffe6b0', 0.5) + sweep('vnp', IMG.vnp, [120, 40, 700, 380]),
   // Стол Веры (V-NP-2-2): пыль в конусе лампы
   'vera-desk': () => motes(IMG.vdesk, [1040, 295, 1250, 520], 12, 161, '#ffe6b0', 0.55),
 
@@ -240,6 +285,44 @@ const BUILD = {
 // Экран ноутбука: чуть заметное дрожание подсветки
 function screen(P) {
   return `<polygon class="amb-flick" points="${pts(P, [[371, 245], [440, 232], [463, 305], [393, 318]])}" fill="#a8c8ff" opacity="0.05" style="--lo:0.03;--hi:0.09;mix-blend-mode:screen"/>`;
+}
+
+// ---------- Жизнь локаций: редкие случайные события ----------
+// every — пауза между событиями в секундах [от, до]; cls — класс на <svg> сцены на dur секунд
+// (запускает одноразовую анимацию); sfx — звук; when — условие по классам сцены.
+const CAR = { every: [45, 90], cls: 'life-car', dur: 3.8, sfx: 'car' };
+const CAR_SOUND = { every: [50, 100], sfx: 'car' };
+const PIPES = { every: [55, 110], sfx: 'pipes' };
+const NEIGHBORS = { every: [80, 160], sfx: 'neighbors' };
+const MOTH = { every: [25, 55], sfx: 'moth' };
+const BIRDS = { every: [18, 40], sfx: 'birds' };
+const PIGEON = { every: [40, 90], sfx: 'pigeon' };
+const TWITCH = { every: [35, 80], cls: 'life-twitch', dur: 0.8 };
+
+const LIFE = {
+  'kitchen-np-night': [CAR, PIPES, MOTH, NEIGHBORS],
+  'kitchen-np-evening': [CAR, PIPES, MOTH, NEIGHBORS],
+  'kitchen-np-morning': [BIRDS, PIPES],
+  'kitchen-p': [CAR_SOUND, NEIGHBORS],
+  'kitchen-p-evening': [PIGEON, CAR_SOUND],
+  'bread-p': [PIGEON],
+  'sill-np': [CAR_SOUND],
+  'book-np': [CAR_SOUND, PIPES],
+  'book-p': [PIGEON],
+  'hall-np-night': [TWITCH, PIPES, NEIGHBORS],
+  'hall-np-evening': [TWITCH, PIPES, NEIGHBORS],
+  'hall-p': [{ every: [20, 40], sfx: 'leak', when: 'vera-here' }, PIGEON],
+  'room-np-night': [CAR, PIPES],
+  'room-np-evening': [CAR, PIPES],
+  'room-np-morning': [BIRDS, PIPES],
+  'room-p': [{ every: [25, 55], sfx: 'crackle', cls: 'life-solder', dur: 1.8 }, { every: [45, 90], sfx: 'static', cls: 'life-radio', dur: 1.1 }, PIGEON],
+  'vera-np': [CAR, PIPES],
+  'vera-desk': [CAR_SOUND, PIPES],
+  'vera-p': [PIGEON, NEIGHBORS],
+};
+
+export function lifeFor(sceneId) {
+  return LIFE[sceneId] || [];
 }
 
 const cache = new Map();

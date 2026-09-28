@@ -942,6 +942,13 @@ function loopNoise(a, { buffer, type, freq, q = 1, vol, lfo = 0, lfoRate = 0.2, 
   };
 }
 
+// Капля в раковину: короткий «плюх» с подъёмом высоты и крошечным всплеском
+function waterDrop(a, bus, t, vol = 0.035) {
+  const f = 900 + Math.random() * 500;
+  a.tone(bus, { freq: f, t, dur: 0.07, vol, attack: 0.002, glide: 0.55, send: 0.45 });
+  a.burst(bus, { t: t + 0.005, dur: 0.03, vol: vol * 0.6, freq: 3200, q: 2, attack: 0.001 });
+}
+
 // Щелчок реле холодильника
 function fridgeClunk(a, t, on) {
   a.tone(a.ambBus, { freq: on ? 62 : 55, t, dur: 0.15, vol: 0.08, attack: 0.003 });
@@ -950,6 +957,24 @@ function fridgeClunk(a, t, on) {
 }
 
 const AMBIENCE = {
+  // Морось (мир «Не приходи»): тише дождя — редкие капли по стеклу и мягкая пелена
+  drizzle: (a) => {
+    const wash = loopNoise(a, { buffer: a.noise, type: 'bandpass', freq: 1500, q: 0.5, vol: 0.022, lfo: 0.008, lfoRate: 0.09 });
+    const low = loopNoise(a, { buffer: a.brown, type: 'lowpass', freq: 420, vol: 0.045, lfo: 0.015, lfoRate: 0.05 });
+    const timer = setInterval(() => {
+      if (!live(a) || Math.random() < 0.45) return;
+      glassDrop(a, a.ambBus, a.ctx.currentTime + 0.05 + Math.random() * 0.2, 0.018 + Math.random() * 0.025);
+    }, 420);
+    return { stop() { wash.stop(); low.stop(); clearInterval(timer); } };
+  },
+  // Кран, обмотанный изолентой: капает раз в четыре секунды — «готовый хай-хэт»
+  tap: (a) => {
+    const timer = setInterval(() => {
+      if (!live(a)) return;
+      waterDrop(a, a.ambBus, a.ctx.currentTime + 0.05 + Math.random() * 0.12, 0.035);
+    }, 4000);
+    return { stop() { clearInterval(timer); } };
+  },
   // Тишина комнаты: низкий гул дома и лёгкий «воздух»
   room: (a) => {
     const base = loopNoise(a, { buffer: a.brown, type: 'lowpass', freq: 380, vol: 0.11, lfo: 0.015, lfoRate: 0.05 });
@@ -1450,6 +1475,101 @@ const SFX = {
     a.burst(a.sfxBus, { t: hit + 0.03, dur: 0.02, vol: 0.3, freq: 3500, q: 4, attack: 0.001 });
     a.tone(a.sfxBus, { freq: 2600, t: hit + 0.03, dur: 0.03, vol: 0.04, attack: 0.001 });
     [0.08, 0.13, 0.17].forEach((off, i) => a.burst(a.sfxBus, { t: hit + off, dur: 0.02, vol: 0.06 / (i + 1), freq: 3000, q: 5, attack: 0.001 }));
+  },
+  // ---------- жизнь локаций: редкие случайные звуки ----------
+  // Батарея: вода в трубах, серия глухих металлических ударов, затухает
+  pipes(a, t) {
+    const hits = [0, 0.32, 0.58, 0.8, 0.97, 1.1].slice(0, 3 + Math.floor(Math.random() * 4));
+    hits.forEach((off, i) => {
+      const v = 1 - i * 0.14;
+      a.burst(a.ambBus, { t: t + off, dur: 0.14, vol: 0.22 * v, type: 'lowpass', freq: 320, buffer: a.brown, send: 0.35, attack: 0.001 });
+      a.tone(a.ambBus, { freq: 180 + Math.random() * 30, type: 'triangle', t: t + off, dur: 0.18, vol: 0.05 * v, attack: 0.001, send: 0.3 });
+      a.burst(a.ambBus, { t: t + off, dur: 0.12, vol: 0.035 * v, freq: 1300 + Math.random() * 300, q: 9, attack: 0.001, send: 0.4 });
+    });
+  },
+  // Машина по мокрой улице: шипение шин нарастает и уходит
+  car(a, t) {
+    const c = a.ctx;
+    const src = c.createBufferSource();
+    src.buffer = a.noise;
+    const f = c.createBiquadFilter();
+    f.type = 'bandpass';
+    f.Q.value = 0.7;
+    f.frequency.setValueAtTime(350, t);
+    f.frequency.linearRampToValueAtTime(1400, t + 1.6);
+    f.frequency.linearRampToValueAtTime(420, t + 3.6);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.05, t + 1.5);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 3.8);
+    src.connect(f).connect(g).connect(a.ambBus);
+    src.start(t, Math.random() * 2);
+    src.stop(t + 4);
+    const hum = c.createOscillator();
+    hum.frequency.setValueAtTime(62, t);
+    hum.frequency.linearRampToValueAtTime(48, t + 3.6);
+    const hg = c.createGain();
+    hg.gain.setValueAtTime(0.0001, t);
+    hg.gain.exponentialRampToValueAtTime(0.03, t + 1.6);
+    hg.gain.exponentialRampToValueAtTime(0.0001, t + 3.7);
+    hum.connect(hg).connect(a.ambBus);
+    hum.start(t);
+    hum.stop(t + 3.9);
+  },
+  // Одна капля из крана
+  drip(a, t) {
+    waterDrop(a, a.ambBus, t, 0.04);
+  },
+  // Голубь на карнизе: «гуу-гу-гуу», глухо через стекло
+  pigeon(a, t) {
+    [[380, 0, 0.42], [330, 0.5, 0.2], [400, 0.78, 0.55]].forEach(([fr, off, dur]) => {
+      a.tone(a.ambBus, { freq: fr, t: t + off, dur, vol: 0.035, attack: 0.05, glide: 1.12, filter: 800, send: 0.3 });
+      a.tone(a.ambBus, { freq: fr * 2, t: t + off, dur: dur * 0.8, vol: 0.006, attack: 0.05, filter: 1200 });
+    });
+  },
+  // Утренние птицы: короткие трели двумя фразами
+  birds(a, t) {
+    for (let ph = 0; ph < 2; ph++) {
+      const base = 2800 + Math.random() * 1400;
+      const n = 3 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < n; i++) {
+        const tt = t + ph * (0.9 + Math.random() * 0.6) + i * (0.07 + Math.random() * 0.06);
+        a.tone(a.ambBus, { freq: base * (0.9 + Math.random() * 0.25), t: tt, dur: 0.06, vol: 0.012, attack: 0.004, glide: 0.62, send: 0.5 });
+      }
+    }
+  },
+  // Соседи за стеной: неразборчивые голоса, будто телевизор через бетон
+  neighbors(a, t) {
+    let tt = t;
+    for (let i = 0; i < 16; i++) {
+      const d = 0.1 + Math.random() * 0.18;
+      a.burst(a.ambBus, { t: tt, dur: d, vol: 0.05 + Math.random() * 0.04, type: 'bandpass', freq: 260 + Math.random() * 260, q: 3, buffer: a.brown, attack: 0.03, send: 0.25 });
+      tt += d + (Math.random() < 0.2 ? 0.35 : 0.04);
+    }
+  },
+  // Музыка из Вериных наушников: тонкий бит и мелодия, еле слышно
+  leak(a, t) {
+    const spb = 0.29;
+    for (let i = 0; i < 14; i++) {
+      a.burst(a.ambBus, { t: t + i * spb, dur: 0.02, vol: 0.012, type: 'highpass', freq: 6500, attack: 0.001 });
+      if (i % 2 === 0) a.burst(a.ambBus, { t: t + i * spb, dur: 0.05, vol: 0.02, freq: 1800, q: 2, attack: 0.002 });
+      if (i % 4 === 1) a.tone(a.ambBus, { freq: midi([79, 83, 81, 76][(i >> 2) % 4]), type: 'square', t: t + i * spb, dur: 0.25, vol: 0.003, filter: 2600 });
+    }
+  },
+  // Паяльник: жало касается флюса — треск и шипение
+  crackle(a, t) {
+    a.burst(a.ambBus, { t, dur: 0.7, vol: 0.012, type: 'highpass', freq: 5000, attack: 0.05 });
+    for (let i = 0; i < 9; i++) a.burst(a.ambBus, { t: t + Math.random() * 0.6, dur: 0.012, vol: 0.03 + Math.random() * 0.03, type: 'highpass', freq: 3500, attack: 0.001 });
+  },
+  // Старый приёмник: сам собой ловит волну — шум и свист настройки
+  static(a, t) {
+    a.burst(a.ambBus, { t, dur: 0.9, vol: 0.022, freq: 1600, q: 0.6, attack: 0.08 });
+    a.tone(a.ambBus, { freq: 1900, t: t + 0.15, dur: 0.5, vol: 0.006, glide: 1.6, attack: 0.05 });
+  },
+  // Бабочка бьётся о плафон: мелкие сухие касания
+  moth(a, t) {
+    const n = 4 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < n; i++) a.burst(a.ambBus, { t: t + i * (0.05 + Math.random() * 0.12), dur: 0.015, vol: 0.02, freq: 2400, q: 2, attack: 0.001 });
   },
   // Сообщение на телефоне: две мягкие ноты из «слова» (ми — си)
   ping(a, t) {
