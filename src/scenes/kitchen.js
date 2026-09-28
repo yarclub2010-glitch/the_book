@@ -11,10 +11,12 @@ const LETTER_COLORS = ['#e2582f', '#e0a93a', '#3a6fb0', '#3e9a5c', '#8a4fb0'];
 
 const BG = {
   np: A.plate('assets/backgrounds/K-NP-1.jpg', 1376, 768),
-  p: A.plate('assets/backgrounds/K-P-1-clean-book.jpg', 1376, 768), // чистая дверца (буквы рисуются поверх), книга на подоконнике
-  pt: A.plate('assets/backgrounds/K-P-1-twin-book.jpg', 1376, 768), // та же кухня ночью, двойник у холодильника
+  // мир П — та же кухня, что в НП, с той же точки и пиксель в пиксель (K-P-1v2 нарисованы по K-NP-1):
+  // при переходе между мирами меняются только стиль и свет. Буквы, записка, фото и книга рисуются поверх.
+  p: A.plate('assets/backgrounds/K-P-1v2-clean.jpg', 1376, 768), // вечер после дождя, три кружки
+  pt: A.plate('assets/backgrounds/K-P-1v2-twin.jpg', 1376, 768), // та же кухня ночью, двойник у холодильника
   // дверца крупно — только в финале главы 1, ночью: ночной кадр, выровнен по пикселям с дневным K-P-2-2
-  pf: A.plate('assets/backgrounds/K-P-2-2-night.jpg', 1376, 768),
+  pf: A.plate('assets/backgrounds/K-P-2v2-night.jpg', 1376, 768),
   // утро в НП: отдельный рассветный кадр (сухое стекло, туман), выровнен по пикселям с K-NP-1
   npm: A.plate('assets/backgrounds/K-NP-1-morning.jpg', 1376, 768),
 };
@@ -28,11 +30,11 @@ const NP_DOOR = { x: 1040, y: 452, dx: 38, dy: 45, size: 31 };
 const MOVED_NP = { Х: [5, 7, -13], О: [-4, 8, 11], Д: [6, 5, 14], И: [-5, 9, -12] };
 const WORD_NP = ['Х', 'О', 'Д', 'И'];
 // Мир П, дверца крупно (K-P-2): двойник выкладывает ровный ряд «УХОДИ»
-const P_DOOR = { x: 500, y: 250, dx: 92, dy: 92, size: 64 };
-const ROW_P = { У: [540, 665], Х: [625, 665], О: [710, 665], Д: [795, 665], И: [880, 665] };
+const P_DOOR = { x: 500, y: 250, dx: 92, dy: 86, size: 64 };
+const ROW_P = { У: [540, 712], Х: [625, 712], О: [710, 712], Д: [795, 712], И: [880, 712] };
 // Мир П, общий план (K-P-1-clean): «УХОДИ» так и висит внизу дверцы с прошлой ночи
-const PW_DOOR = { x: 1102, y: 300, dx: 30, dy: 36, size: 25 };
-const ROW_PW = { У: [1112, 512], Х: [1140, 512], О: [1168, 512], Д: [1196, 512], И: [1224, 512] };
+const PW_DOOR = { x: 1040, y: 452, dx: 38, dy: 45, size: 31 };
+const ROW_PW = { У: [1078, 668], Х: [1116, 668], О: [1154, 668], Д: [1192, 668], И: [1230, 674] };
 
 function letterLayout(world) {
   const B = { np: BG.np, p: BG.pf, pw: BG.p }[world];
@@ -212,7 +214,7 @@ function miri(B) {
 }
 
 // Верина книга на подоконнике (глава 2: Тихон кладёт её туда сам)
-function sillBook(B) {
+function sillBook(B, swollen = false) {
   const P4 = (dy) => [B.I(502, 477 + dy), B.I(590, 473 + dy), B.I(603, 487 + dy), B.I(510, 492 + dy)];
   const top = P4(0);
   const bottom = P4(6);
@@ -220,6 +222,15 @@ function sillBook(B) {
   const [sx, sy] = B.I(556, 494);
   // книгу сдвинули в другом мире (класс book-shifted) — у нас она тоже съехала и повёрнута
   const [px, py] = B.I(552, 484);
+  if (swollen) {
+    // мир П: тот же том, но бирюзовый переплёт и вздувшийся от воды блок страниц
+    const pg = P4(9);
+    return `<ellipse cx="${sx}" cy="${sy + 3}" rx="${62 * B.k}" ry="${7 * B.k}" fill="#2a1030" opacity="0.35"/>
+      <polygon points="${[top[3], top[2], pg[2], pg[3]].join(' ')}" fill="#f1e2cf"/>
+      <path d="M${top[3]} Q${B.I(530, 497)} ${B.I(556, 494)} T${top[2]}" fill="none" stroke="#b9a18a" stroke-width="1.4"/>
+      <polygon points="${top.join(' ')}" fill="#3f8f98" stroke="#1d3c48" stroke-width="1.4"/>
+      <polygon points="${top.join(' ')}" fill="#ffc1d8" opacity="0.18"/>`;
+  }
   return `<g class="sill-book"><g class="sill-book-pose" style="transform-origin:${px.toFixed(0)}px ${py.toFixed(0)}px">
     <defs><linearGradient id="sb-cloth" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2d3646"/><stop offset="0.55" stop-color="#232a37"/><stop offset="1" stop-color="#151a22"/></linearGradient>
     <linearGradient id="sb-lamp" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffb96b" stop-opacity="0"/><stop offset="1" stop-color="#ffb96b" stop-opacity="0.22"/></linearGradient>
@@ -291,8 +302,10 @@ function buildP(withTwin) {
   let s = commonDefs('p') + (withTwin ? BG.pt : BG.p).image('class="bg"');
   // всё, что лежит поверх картинки; ночью (кадр с двойником) — приглушено под свет сцены
   let o = '';
-  o += anchor(B, 'kp-photo', [869, 126, 912, 178]);
-  o += paper(B, [1150, 196, 86, 48], -3, '#fbf3ee', ['Купи хлеб!!', '— В.'], 13, '#5a2a6a');
+  o += anchor(B, 'kp-photo', [977, 71, 1044, 145]);
+  o += paper(B, [1140, 250, 88, 50], -3, '#fbf3ee', ['Купи хлеб!!', '— В.'], 13, '#5a2a6a');
+  // Верина книга на подоконнике — лежит здесь шесть лет, страницы вздулись
+  o += `<g class="sill-book-p">${sillBook(B, true)}</g>`;
   if (!withTwin) o += letters('pw');
   return s + (withTwin ? `<g style="filter:brightness(0.5) saturate(0.7) hue-rotate(20deg)">${o}</g>` : o);
 }
@@ -323,18 +336,19 @@ const shotsNP = {
 const shotsP = {
   wide: [0, 0, 1600, 900],
   room: [60, 34, 1480, 832],
-  window: P.shot(420, 230, 560),
-  table: P.shot(650, 430, 620),
-  photo: P.shot(890, 152, 170),
-  shelf: P.shot(960, 130, 360),
-  clock: P.shot(1000, 90, 300),
-  fridge: P.shot(1190, 330, 460),
-  sink: P.shot(170, 560, 460),
-  twin: P.shot(1000, 380, 760),
+  window: P.shot(300, 300, 620),
+  sill: P.shot(380, 430, 640),
+  table: P.shot(690, 470, 640),
+  photo: P.shot(1010, 108, 190),
+  shelf: P.shot(1060, 150, 420),
+  clock: P.shot(1150, 170, 300),
+  fridge: P.shot(1130, 380, 480),
+  sink: P.shot(1220, 560, 420),
+  twin: P.shot(1040, 420, 760),
 };
 const shotsPF = {
   wide: [0, 0, 1600, 900],
-  row: BG.pf.shot(705, 420, 1000),
+  row: BG.pf.shot(705, 470, 1000),
 };
 
 // ---------- Активные зоны ----------
@@ -374,11 +388,11 @@ const LOOK = {
     window: ['Окно', 'window', ['Дождь. Стекло в каплях. Здесь, кажется, всегда только что прошёл дождь.', 'Та же насыпь, те же провода. Папину электричку слышно и сквозь дождь.']],
     table: ['Стол', 'table', ['Три кружки, ещё тёплые. У белой сколот край — Верина. Здесь из неё пьют.', 'Здесь кто-то варит кофе по утрам. У нас его не варят с тех пор, как Вера уехала.']],
     fridge: ['Холодильник', 'fridge', ['«УХОДИ». Так и висит — он не стал снимать.', 'Остальные буквы вразнобой. Слов из них здесь давно никто не складывал.']],
-    sink: ['Раковина, хлебница', 'sink', ['Раковина. Где-то в трубе капает — раз в четыре секунды. Готовый хай-хэт.', 'Дальше по столешнице — хлебница. Вся во вмятинах, будто её вечно захлопывают на бегу.']],
+    sink: ['Столешница', 'sink', ['Там, за углом, раковина. Где-то в трубе капает — раз в четыре секунды. Готовый хай-хэт.', 'На столешнице — хлебница. Вся во вмятинах, будто её вечно захлопывают на бегу.']],
     book: ['Книга', 'window', ['Книга Веры. «Опыты с водой и светом». Страницы вздулись от воды.', 'Лежит здесь с того самого утра. Никто её не убирает.']],
     clock: ['Часы', 'clock', ['Часы на полке. Сверяю с телефоном — секунда в секунду.', 'У нас они шесть лет спешат. Здесь их кто-то подводит.']],
     note: ['Записка', 'fridge', ['«Купи хлеб!!» — Верин почерк. Тот же наклон, что в записке шесть лет назад.', 'Здесь она пишет про хлеб. У нас — открытки из Петербурга, раз в год.']],
-    photo: ['Фото', 'photo', [ANCHOR_LINE, 'Рамка другая, а снимок тот же — до последней царапинки. Больше тут ничего не совпадает.', 'Фото будто светится. Или мне кажется.']],
+    photo: ['Фото', 'photo', [ANCHOR_LINE, 'До царапины на рамке — такое же, как у нас. Та же полка, тот же гвоздь.', 'Фото будто светится. Или мне кажется.']],
   },
 };
 
@@ -402,14 +416,14 @@ function hotspots(world, time) {
       miri: B.rect(1085, 105, 1128, 160),
     }
     : {
-      window: B.rect(228, 0, 690, 370),
-      sink: B.rect(0, 440, 320, 768),
-      table: B.rect(385, 355, 915, 470),
-      fridge: B.rect(1045, 175, 1345, 670),
-      book: B.rect(250, 330, 440, 396),
-      clock: B.circle(1008, 40, 28),
-      note: B.rect(1146, 190, 1242, 250),
-      photo: B.rect(864, 120, 918, 184),
+      window: B.rect(60, 0, 560, 470),
+      book: B.rect(470, 455, 630, 515),
+      sink: B.rect(1280, 400, 1376, 740),
+      table: B.rect(485, 490, 895, 665),
+      fridge: B.rect(982, 392, 1262, 712),
+      clock: B.circle(1207, 187, 32),
+      note: B.rect(1134, 244, 1236, 306),
+      photo: B.rect(966, 60, 1054, 154),
     };
   const list = [];
   for (const [id, shape] of Object.entries(zones)) {

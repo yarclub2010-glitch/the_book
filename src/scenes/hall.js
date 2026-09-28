@@ -125,10 +125,10 @@ export const roomP = {
   events: {},
 };
 
-// Коридор мира «Приходи» (H-P-1): вешалка, открытая дверь Веры со светом.
-// Вера стоит в дверях — отдельный кадр того же коридора (H-P-1-vera), класс vera-here.
-const HP = A.plate('assets/backgrounds/H-P-1.jpg', 1376, 768);
-const HP_VERA = A.plate('assets/backgrounds/H-P-1-vera.jpg', 1376, 768);
+// Коридор мира «Приходи»: тот же коридор, что в НП, с той же точки (H-P-1v2 нарисован по H-NP-1).
+// Дверь Веры в конце открыта, из неё свет. Вера в дверях — отдельный кадр (H-P-1v2-vera), класс vera-here.
+const HP = A.plate('assets/backgrounds/H-P-1v2.jpg', 1376, 768);
+const HP_VERA = A.plate('assets/backgrounds/H-P-1v2-vera.jpg', 1376, 768);
 export const hallP = {
   id: 'hall-p',
   world: 'p',
@@ -137,17 +137,18 @@ export const hallP = {
   extra: [HP_VERA.src],
   shots: {
     wide: [0, 0, 1600, 900],
-    coats: HP.shot(260, 300, 560),
-    door: HP.shot(900, 400, 600),
+    coats: HP.shot(320, 330, 620),
+    door: HP.shot(780, 330, 560),
   },
   ambience: ['rain'],
   build: () => HP.image('class="bg"') + HP_VERA.image('class="bg-vera"'),
   hotspots: [
-    { id: 'corridor', label: 'Кухня', shot: '', shape: HP.rect(500, 230, 700, 500), lines: [] },
-    { id: 'coats', label: 'Вешалка', shot: 'coats', shape: HP.rect(110, 20, 410, 570), lines: ['Куртки, шарфы, чья-то бордовая шляпа. Здесь всё время кто-то приходит и уходит.', 'У нас вешалка полупустая.'] },
-    { id: 'shoes', label: 'Обувь', shot: 'coats', shape: HP.rect(100, 560, 520, 768), lines: ['Мокрые белые кеды. Его. Он, похоже, вообще не сушит обувь.'] },
-    { id: 'window', label: 'Окно', shot: '', shape: HP.rect(1140, 0, 1376, 500), lines: ['Дождь. В каждой капле — по фонарю со двора.'] },
-    { id: 'vera', label: 'Вера', shot: 'door', shape: HP.rect(760, 180, 1060, 720), lines: [] },
+    { id: 'corridor', label: 'Кухня', shot: '', shape: HP.rect(540, 140, 650, 570), lines: [] },
+    { id: 'coats', label: 'Вешалка', shot: 'coats', shape: HP.rect(120, 110, 520, 560), lines: ['Куртки всех цветов, шарфы, шапки на полке. Здесь всё время кто-то приходит и уходит.', 'У нас вешалка полупустая.'] },
+    { id: 'shoes', label: 'Обувь', shot: 'coats', shape: HP.rect(330, 560, 516, 768), lines: ['Резиновые сапоги и чьи-то кеды. Мокрые. Здесь, кажется, всегда только что пришли с дождя.'] },
+    { id: 'sconce', label: 'Бра', shot: 'door', shape: HP.circle(905, 172, 34), lines: ['Бра горит ровно. У нас оно мигает, когда идёт поезд. Здесь кто-то поменял патрон.'] },
+    { id: 'mine', label: 'Его дверь', shot: '', shape: HP.rect(1025, 0, 1148, 768), lines: ['Моя дверь. То есть его. Изнутри пахнет канифолью.'] },
+    { id: 'vera', label: 'Вера', shot: 'door', shape: HP.rect(680, 35, 865, 600), lines: [] },
   ],
   events: {},
 };
