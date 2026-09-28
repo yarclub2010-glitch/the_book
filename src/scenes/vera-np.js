@@ -8,6 +8,10 @@ const ROOM_EMPTY = A.plate('assets/backgrounds/V-NP-1-nobook-off.jpg', 1376, 768
 const ROOM_UV = A.plate('assets/backgrounds/V-NP-1.jpg', 1376, 768);
 const ROOM_EMPTY_UV = A.plate('assets/backgrounds/V-NP-1-nobook.jpg', 1376, 768);
 const DESK = A.plate('assets/backgrounds/V-NP-2-2.jpg', 1376, 768);
+// ночные кадры (класс vera-night от главы): та же разметка, за окном ночь, горят только лампы
+const ROOM_N = A.plate('assets/backgrounds/V-NP-1-off-night.jpg', 1376, 768);
+const ROOM_EMPTY_N = A.plate('assets/backgrounds/V-NP-1-nobook-off-night.jpg', 1376, 768);
+const DESK_N = A.plate('assets/backgrounds/V-NP-2-2-night.jpg', 1376, 768);
 
 function buildRoom() {
   const B = ROOM;
@@ -17,6 +21,7 @@ function buildRoom() {
   // когда книгу унесли — тот же кадр без книги на столе (V-NP-1-nobook)
   s += ROOM_EMPTY.image('class="bg-nobook"');
   s += ROOM_UV.image('class="bg-uv"') + ROOM_EMPTY_UV.image('class="bg-uv bg-nobook"');
+  s += ROOM_N.image('class="bg-night"') + ROOM_EMPTY_N.image('class="bg-night bg-nobook"');
   const lamp = B.I(675, 405);
   s += `<circle class="flicker" cx="${lamp[0]}" cy="${lamp[1]}" r="260" fill="url(#vr-lamp)" style="mix-blend-mode:screen"/>`;
   // пыль в свете лампы
@@ -30,7 +35,7 @@ function buildRoom() {
 function buildDesk() {
   const B = DESK;
   let s = `<defs></defs>`;
-  s += B.image('class="bg"');
+  s += B.image('class="bg"') + DESK_N.image('class="bg-night"');
   return s;
 }
 

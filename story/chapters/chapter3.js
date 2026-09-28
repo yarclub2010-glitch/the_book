@@ -31,7 +31,7 @@ export default {
   },
 
   sceneClasses: (s) => [
-    'note-shift', 'book-on-sill', 'book-taken', 'book-shifted',
+    'note-shift', 'book-on-sill', 'book-taken', 'book-shifted', 'vera-night',
     s.flags.pencil && 'w-pencil-on',
     s.flags.faint && 'w-faint-on',
     s.flags.lemon && 'w-lemon-on',

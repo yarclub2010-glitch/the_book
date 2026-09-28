@@ -13,7 +13,10 @@ const BG = {
   np: A.plate('assets/backgrounds/K-NP-1.jpg', 1376, 768),
   p: A.plate('assets/backgrounds/K-P-1-clean-book.jpg', 1376, 768), // чистая дверца (буквы рисуются поверх), книга на подоконнике
   pt: A.plate('assets/backgrounds/K-P-1-twin-book.jpg', 1376, 768), // та же кухня ночью, двойник у холодильника
-  pf: A.plate('assets/backgrounds/K-P-2-2.jpg', 1376, 768),
+  // дверца крупно — только в финале главы 1, ночью: ночной кадр, выровнен по пикселям с дневным K-P-2-2
+  pf: A.plate('assets/backgrounds/K-P-2-2-night.jpg', 1376, 768),
+  // утро в НП: отдельный рассветный кадр (сухое стекло, туман), выровнен по пикселям с K-NP-1
+  npm: A.plate('assets/backgrounds/K-NP-1-morning.jpg', 1376, 768),
 };
 
 // ---------- Магнитные буквы ----------
@@ -169,12 +172,8 @@ function semaphore(B, [x, y], r = 11) {
 function buildNP(time) {
   const B = BG.np;
   const night = time === 'night';
-  let s = commonDefs('np') + B.image(`class="bg bg-${time}"`);
-  if (time === 'morning') {
-    // утро: мягкое свечение от окна, без резких краёв
-    const [cx, cy] = B.I(300, 280);
-    s += `<circle cx="${cx}" cy="${cy}" r="${520 * B.k}" fill="url(#knp-dawn)" style="mix-blend-mode:screen"/>`;
-  }
+  // утро — свой кадр (та же разметка), вечер — ночной кадр чуть светлее
+  let s = commonDefs('np') + (time === 'morning' ? BG.npm.image('class="bg"') : B.image(`class="bg bg-${time}"`));
   s += semaphore(B, [247, 236]);
   // тёплый круг от лампы на столе
   const lamp = B.I(690, 380);
@@ -475,7 +474,7 @@ function kitchenNP(time) {
     id: `kitchen-np-${time}`,
     world: 'np',
     title: 'Кухня',
-    bg: BG.np.src,
+    bg: time === 'morning' ? BG.npm.src : BG.np.src,
     shots: shotsNP,
     ambience: time === 'morning' ? ['fridge', 'kettle', 'clock'] : ['fridge', 'clock', 'drizzle'],
     build: () => buildNP(time),

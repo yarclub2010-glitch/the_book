@@ -146,6 +146,9 @@ button { font: inherit; color: inherit; }
 /* УФ-лампа Веры включена (позже по сюжету) */
 .bg-uv { display: none !important; }
 .uv-on .bg-uv:not(.bg-nobook), .uv-on.book-taken .bg-uv.bg-nobook { display: inline !important; }
+/* комната Веры ночью (глава 3): ночные кадры поверх дневных */
+.bg-night { display: none !important; }
+.vera-night .bg-night:not(.bg-nobook), .vera-night.book-taken .bg-night.bg-nobook { display: inline !important; }
 /* записи на полях книги (глава 3) */
 .w-pencil, .w-faint, .w-lemon, .w-burn, .w-reply, .w-m2 { display: none; }
 .w-pencil-on .w-pencil, .w-faint-on .w-faint, .w-lemon-on .w-lemon, .w-burn-on .w-burn, .w-reply-on .w-reply, .w-m2-on .w-m2 { display: inline; }
