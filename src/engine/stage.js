@@ -71,7 +71,13 @@ export class Stage {
   setGroups(groups = []) {
     const svg = this.root;
     if (!svg) return;
-    svg.querySelectorAll('.hs').forEach((el) => el.classList.toggle('active', groups.includes(el.dataset.group)));
+    svg.querySelectorAll('.hs').forEach((el) => {
+      const on = groups.includes(el.dataset.group);
+      el.classList.toggle('active', on);
+      // с клавиатуры: Tab — по активным зонам, Enter/пробел — осмотреть
+      if (on) el.setAttribute('tabindex', '0');
+      else el.removeAttribute('tabindex');
+    });
   }
 
   hotspot(id) {
@@ -254,7 +260,7 @@ function hotspotsMarkup(list, sceneId = 's') {
     const feather = size < 90 ? 's' : size < 260 ? 'm' : 'l';
     const focus = `<mask id="${m}" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="#fff"/>${geom('', `fill="#000" filter="url(#hs-feather-${feather})"`)}</mask>`
       + `<rect class="hs-dim" width="${W}" height="${H}" mask="url(#${m})"/>`;
-    return `<g class="hs" data-id="${esc(h.id)}" data-group="${esc(h.group || 'look')}" data-label="${esc(h.label || '')}">${focus}${geom('hs-shape')}</g>`;
+    return `<g class="hs" role="button" aria-label="${esc(h.label || h.id)}" data-id="${esc(h.id)}" data-group="${esc(h.group || 'look')}" data-label="${esc(h.label || '')}">${focus}${geom('hs-shape')}</g>`;
   });
   // растушёвка края «окна»: чем больше зона, тем мягче переход
   const f = (k, d) => `<filter id="hs-feather-${k}" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="${d}"/></filter>`;

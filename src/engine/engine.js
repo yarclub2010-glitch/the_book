@@ -49,7 +49,7 @@ const store = {
   },
 };
 
-const DEFAULTS = { music: 0.7, sfx: 0.8, textSpeed: 45, autoDelay: 1.6, captions: true, motion: true };
+const DEFAULTS = { music: 0.7, sfx: 0.8, textSpeed: 45, autoDelay: 1.6, captions: true, motion: true, bigText: false };
 const TIME_NAMES = { night: 'ночь', morning: 'утро', evening: 'вечер' };
 
 export class Game {
@@ -81,12 +81,14 @@ export class Game {
     const s = this.settings;
     audio.setVolumes({ music: s.music, sfx: s.sfx });
     this.game.classList.toggle('no-motion', !s.motion);
+    this.game.classList.toggle('big-text', !!s.bigText);
     $('#set-music').value = s.music;
     $('#set-sfx').value = s.sfx;
     $('#set-speed').value = s.textSpeed;
     $('#set-auto').value = s.autoDelay;
     $('#set-captions').checked = s.captions;
     $('#set-motion').checked = s.motion;
+    $('#set-big').checked = !!s.bigText;
   }
 
   saveSettings() {
@@ -161,6 +163,19 @@ export class Game {
       } else label.classList.remove('on');
     });
     stageEl.addEventListener('pointerleave', () => $('#hs-label').classList.remove('on'));
+    // зона получила фокус с клавиатуры — подпись у её середины, как при наведении мышью
+    stageEl.addEventListener('focusin', (e) => {
+      const hs = e.target.closest && e.target.closest('.hs.active');
+      const label = $('#hs-label');
+      if (!hs || !hs.dataset.label) return label.classList.remove('on');
+      const r = stageEl.getBoundingClientRect();
+      const b = (hs.querySelector('.hs-shape') || hs).getBoundingClientRect();
+      label.textContent = hs.dataset.label;
+      label.style.left = `${b.left + b.width / 2 - r.left}px`;
+      label.style.top = `${b.top + b.height / 2 - r.top}px`;
+      label.classList.add('on');
+    });
+    stageEl.addEventListener('focusout', () => $('#hs-label').classList.remove('on'));
     stageEl.addEventListener('wheel', (e) => {
       if (this.panelOpen() || !this.mode) return;
       // колесо вниз — отойти от предмета; журнал колесом не открывается (только L или кнопкой)
@@ -176,6 +191,14 @@ export class Game {
         return;
       }
       if (this.panelOpen() || this.game.classList.contains('at-title')) return;
+      // зона в фокусе (Tab): Enter/пробел — осмотреть её, как щелчком в её середине
+      const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest('.hs.active');
+      if (focused && (e.key === ' ' || e.key === 'Enter')) {
+        e.preventDefault();
+        const r = (focused.querySelector('.hs-shape') || focused).getBoundingClientRect();
+        this.onHotspot(focused, { clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 });
+        return;
+      }
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
         this.next();
@@ -262,6 +285,10 @@ export class Game {
     });
     $('#set-motion').addEventListener('change', (e) => {
       this.settings.motion = e.target.checked;
+      this.saveSettings();
+    });
+    $('#set-big').addEventListener('change', (e) => {
+      this.settings.bigText = e.target.checked;
       this.saveSettings();
     });
   }

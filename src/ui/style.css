@@ -301,7 +301,8 @@ button { font: inherit; color: inherit; }
 .hs-shape { fill: transparent; stroke: none; }
 .hs-dim { pointer-events: none; fill: #07060c; opacity: 0; transition: opacity 0.5s ease; }
 [data-world="p"] .hs-dim { fill: #1a0a22; }
-.hs.active[data-group="look"]:hover .hs-dim { opacity: 0.4; }
+.hs.active[data-group="look"]:hover .hs-dim, .hs.active:focus-visible .hs-dim { opacity: 0.4; }
+.hs:focus { outline: none; }
 /* мелкие детали загадок (буквы, обрывки) — фокус чуть плотнее, чтобы деталь читалась */
 .hs.active[data-group="letters"]:hover .hs-dim,
 .hs.active[data-group="frags"]:hover .hs-dim { opacity: 0.46; transition-duration: 0.25s; }
@@ -662,3 +663,12 @@ button:focus-visible { outline: 0.2cqw solid var(--accent); outline-offset: 0.2c
   .menu button { font-size: max(2cqw, 15px); }
   .menu button small { font-size: max(1cqw, 10px); }
 }
+
+/* Настройка «Крупный текст»: реплики, мысли, подсказки и выборы — примерно на четверть крупнее */
+.big-text .d-text { font-size: 2.5cqw !important; }
+.big-text .d-name { font-size: 2.8cqw !important; }
+.big-text .dialog[data-kind="narr"] .d-text { font-size: 2.2cqw !important; }
+.big-text .pop { font-size: max(1.75cqw, 15px) !important; max-width: 50%; }
+.big-text .hint, .big-text .caption, .big-text .banner { font-size: max(1.6cqw, 14px) !important; }
+.big-text .choice button { font-size: max(2cqw, 16px) !important; }
+.big-text .panel-box p, .big-text .panel-box td, .big-text .law span { font-size: 1.3em; }
