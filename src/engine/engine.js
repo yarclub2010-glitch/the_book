@@ -307,7 +307,15 @@ export class Game {
   showTitle() {
     this.game.classList.add('at-title');
     $('#title').classList.add('on');
-    $('#btn-continue').disabled = !store.get('auto');
+    const auto = store.get('auto');
+    $('#btn-continue').disabled = !auto;
+    $('#btn-continue').innerHTML = `Продолжить${auto ? `<small>${esc(auto.chapterTitle || '')}${auto.place ? ` · ${esc(auto.place)}` : ''}</small>` : ''}`;
+    // найденные концовки — повод пройти ещё раз
+    const got = store.get('endings', []);
+    const ALL = [['exchange', 'Обмен'], ['split', 'Разделение'], ['bridge', 'Мост'], ['merge', 'Слияние']];
+    $('#title-endings').innerHTML = got.length
+      ? `Концовки: ${ALL.map(([id, name]) => (got.includes(id) ? `<b>${name}</b>` : '···')).join(' · ')}`
+      : 'Главы 1–9 · четыре концовки';
     // Главы: открыты те, у которых пройдена предыдущая
     const order = Object.values(CHAPTERS);
     // глава открыта, если до неё дошли; ветки (branch) — только если игрок на них вышел
@@ -1084,6 +1092,9 @@ export class Game {
     this.game.classList.remove('exploring', 'in-beat');
     audio.music('title', { fade: 4 });
     store.set(`done:${this.chapter.id}`, true);
+    // найденная концовка (для счётчика в главном меню)
+    const ending = this.chapter.id === 'ch8x' ? 'exchange' : this.chapter.id === 'ch9' ? this.state.flags.ending : null;
+    if (ending) store.set('endings', [...new Set([...store.get('endings', []), ending])]);
     // запомнить решения главы — они влияют на следующие главы и на концовку
     if (this.chapter.remember) {
       const legacy = { ...store.get('legacy', {}), ...this.chapter.remember(this.state) };

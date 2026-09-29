@@ -262,16 +262,26 @@ function hotspotsMarkup(list, sceneId = 's') {
   return `<g class="hotspots">${defs}${items.join('')}</g>`;
 }
 
-// Фон главного меню: два мира, разделённые диагональю
+// Фон главного меню: одна и та же кухня в двух мирах, разрезанная диагональю.
+// Кадры кухни «Не приходи» (ночь, лампа) и «Приходи» (закат после дождя) совпадают пиксель в пиксель —
+// разрез проходит через одну комнату: окно, подоконник, стол, холодильник. С «жизнью» сцены (капли, пар, бабочка).
 export function titleBackdrop(el) {
-  const a = document.createElement('div');
-  a.className = 'backdrop-half np';
-  a.innerHTML = `<svg viewBox="200 60 1300 731" preserveAspectRatio="xMidYMid slice">${scenes['room-np-night'].build()}</svg>`;
-  const b = document.createElement('div');
-  b.className = 'backdrop-half p';
-  b.innerHTML = `<svg viewBox="150 40 1350 759" preserveAspectRatio="xMidYMid slice">${scenes['kitchen-p-evening'].build()}</svg>`;
-  b.querySelectorAll('.letters').forEach((g) => g.remove()); // не подсказывать загадку до игры
-  el.append(a, b);
+  const view = '120 20 1480 832';
+  const half = (cls, id) => {
+    const d = document.createElement('div');
+    d.className = `backdrop-half ${cls}`;
+    d.innerHTML = `<svg viewBox="${view}" preserveAspectRatio="xMidYMid slice">${scenes[id].build()}${ambientFor(id)}</svg>`;
+    // не подсказывать загадку до игры: буквы на холодильнике — только в самой игре
+    d.querySelectorAll('.letters').forEach((g) => g.remove());
+    return d;
+  };
+  const a = half('np', 'kitchen-np-night');
+  const b = half('p', 'kitchen-p-evening');
+  // шов между мирами — точно по линии разреза (та же диагональ, что в clip-path половинок)
+  const seam = document.createElement('div');
+  seam.className = 'seam-line';
+  seam.innerHTML = '<svg viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="64" y1="0" x2="40" y2="100" vector-effect="non-scaling-stroke"/></svg>';
+  el.append(a, b, seam);
   // каждая половина проявляется, когда её картинки готовы
   [a, b].forEach((half) => {
     const imgs = [...half.querySelectorAll('image')];

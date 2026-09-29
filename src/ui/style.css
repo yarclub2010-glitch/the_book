@@ -456,23 +456,44 @@ button { font: inherit; color: inherit; }
 .backdrop-half.np { clip-path: polygon(0 0, 64% 0, 40% 100%, 0 100%); }
 .backdrop-half.p { clip-path: polygon(64% 0, 100% 0, 100% 100%, 40% 100%); }
 .title::before {
-  content: ""; position: absolute; inset: 0; z-index: 1;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.55) 38%, rgba(0, 0, 0, 0.1) 70%);
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.5) 34%, rgba(0, 0, 0, 0.08) 62%),
+    radial-gradient(ellipse at 50% 120%, rgba(0, 0, 0, 0.55), transparent 60%);
 }
-.seam {
-  position: absolute; z-index: 1; left: 52%; top: -10%; width: 0.25cqw; height: 120%;
-  background: linear-gradient(to bottom, transparent, #fff6c9 30%, #ff8ab8 70%, transparent);
-  transform: rotate(13.6deg); box-shadow: 0 0 2cqw 0.4cqw rgba(255, 240, 200, 0.45);
-  animation: seam 5s ease-in-out infinite alternate;
-}
-@keyframes seam { from { opacity: 0.55; } to { opacity: 1; } }
+.seam { display: none; }
+/* шов между мирами — по линии разреза половинок: янтарь «Не приходи» переходит в розовый «Приходи» */
+.seam-line { position: absolute; inset: 0; z-index: 1; pointer-events: none; animation: seam 5s ease-in-out infinite alternate; }
+.seam-line svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.seam-line line { stroke: #fff1d6; stroke-width: 3px; filter: drop-shadow(0 0 4px rgba(255, 226, 170, 1)) drop-shadow(0 0 14px rgba(255, 138, 184, 0.8)); }
+@keyframes seam { from { opacity: 0.8; } to { opacity: 1; } }
 .title-block { position: absolute; z-index: 2; left: 7%; top: 50%; transform: translateY(-50%); }
 .logo {
   font-family: "Unbounded", sans-serif; font-weight: 700; font-size: 6.5cqw; line-height: 1; letter-spacing: -0.01em;
   background: linear-gradient(100deg, #ffe7b0 0%, #f3b53f 45%, #ff8ab8 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.tagline { font-size: 1.7cqw; color: #e9dfcf; margin: 1cqw 0 3cqw; letter-spacing: 0.04em; }
+/* название из магнитных букв, как на холодильнике: пластик, блик, тень, каждая чуть набок */
+.logo.magnets { background: none; -webkit-background-clip: initial; background-clip: initial; color: inherit; display: flex; align-items: flex-end; gap: 0.15cqw; font-family: "Rubik", "Arial Black", sans-serif; font-weight: 900; font-size: 6.2cqw; line-height: 1; letter-spacing: 0; }
+.mag-l {
+  display: inline-block; color: var(--c); transform: rotate(var(--r));
+  -webkit-text-stroke: 0.1cqw rgba(24, 14, 10, 0.7);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 30%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 0.22) 100%), var(--c);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0.15cqw 0.35cqw 0.25cqw rgba(0, 0, 0, 0.55));
+  transition: transform 0.25s;
+}
+.mag-l.mag-bar { transform: translateY(-0.2cqw) rotate(var(--r)); }
+/* наведение — буква дрогнула, как магнит на дверце */
+.mag-l:hover { animation: mag-rattle 0.7s ease-out; }
+@keyframes mag-rattle { 0% { transform: rotate(var(--r)); } 20% { transform: rotate(calc(var(--r) - 9deg)); } 45% { transform: rotate(calc(var(--r) + 6deg)); } 70% { transform: rotate(calc(var(--r) - 2deg)); } 100% { transform: rotate(var(--r)); } }
+.tagline { font-size: 1.7cqw; color: #e9dfcf; margin: 1cqw 0 0.6cqw; letter-spacing: 0.04em; }
+.tagline-sub { font-size: 1.15cqw; color: rgba(233, 223, 207, 0.55); margin: 0 0 2.8cqw; font-style: italic; letter-spacing: 0.02em; }
+/* под «Продолжить» — где остановился */
+.menu button small { display: block; font-family: "Onest", sans-serif; text-transform: none; letter-spacing: 0.02em; font-size: 1cqw; color: rgba(255, 255, 255, 0.45); margin-top: 0.1cqw; }
+/* найденные концовки */
+.title-endings { letter-spacing: 0.08em; }
+.title-endings b { font-weight: 400; color: var(--accent); }
 .menu { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5cqw; }
 .menu button {
   background: none; border: 0; cursor: pointer; padding: 0.45cqw 0;
