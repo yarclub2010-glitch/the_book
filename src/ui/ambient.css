@@ -113,11 +113,43 @@
 @keyframes amb-twitch { 0% { opacity: 0; } 12% { opacity: 1; } 30% { opacity: 0; } 42% { opacity: 1; } }
 @keyframes amb-twitch-off { 0% { opacity: 1; } 12% { opacity: 0; } 30% { opacity: 1; } 42% { opacity: 0; } }
 
+/* ---------- тревога (глава 1): дом живёт сам ---------- */
+.amb-nudge { transform-box: view-box; }
+.life-mug .life-mug-part { animation: amb-mug 1.4s ease-out; }
+@keyframes amb-mug { 0% { transform: none; } 12% { transform: translateX(2px) rotate(-1.4deg); } 24% { transform: translateX(-1px) rotate(0.8deg); } 38% { transform: translateX(1px) rotate(-0.5deg); } 100% { transform: none; } }
+.life-mic .life-mic-part { animation: amb-mic 2.2s ease-in-out; }
+@keyframes amb-mic { 0% { transform: none; } 20% { transform: rotate(-1deg); } 45% { transform: rotate(0.7deg); } 70% { transform: rotate(-0.3deg); } 100% { transform: none; } }
+/* буква-магнит дрогнула на дверце */
+.life-letter .mag[data-ch="Ж"] text, .life-letter .mag[data-ch="Ш"] text { transform-box: fill-box; transform-origin: 50% 20%; animation: amb-rattle 0.9s ease-out; }
+@keyframes amb-rattle { 0% { transform: none; } 15% { transform: rotate(-9deg); } 35% { transform: rotate(6deg); } 55% { transform: rotate(-3deg); } 75% { transform: rotate(1.5deg); } 100% { transform: none; } }
+/* записка на холодильнике шевельнулась от сквозняка */
+.life-note .note-a, .life-note .note-b { transform-box: fill-box; transform-origin: 50% 0%; animation: amb-flutter 1.6s ease-in-out; }
+@keyframes amb-flutter { 0% { transform: none; } 25% { transform: rotate(2.4deg) skewX(-1deg); } 50% { transform: rotate(-1.4deg); } 75% { transform: rotate(0.8deg); } 100% { transform: none; } }
+/* свет проседает, как от скачка напряжения */
+.amb-dip { opacity: 0; }
+.life-dip .amb-dip { animation: amb-dip 1.3s steps(1, end); }
+@keyframes amb-dip { 0% { opacity: 0.45; } 12% { opacity: 0.1; } 22% { opacity: 0.55; } 30% { opacity: 0; } 60% { opacity: 0.25; } 68% { opacity: 0; } }
+/* тень проходит по стене справа налево */
+.amb-shade { opacity: 0; }
+.life-shade .amb-shade { animation: amb-shade 4.2s ease-in-out forwards; }
+@keyframes amb-shade { 0% { transform: translateX(0); opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateX(var(--d, -800px)); opacity: 0; } }
+/* экран ноутбука дёрнулся — полоса помех */
+.amb-glitch { opacity: 0; mix-blend-mode: screen; }
+.life-screen .amb-glitch { animation: amb-glitch 0.7s steps(1, end); }
+@keyframes amb-glitch { 0% { opacity: 0.5; } 15% { opacity: 0; } 30% { opacity: 0.35; } 45% { opacity: 0; } 60% { opacity: 0.6; } 75% { opacity: 0; } }
+/* фото-якорь на миг будто светится само */
+.life-photo .photoglow { animation: amb-photo 2.4s ease-in-out; }
+@keyframes amb-photo { 0% { opacity: 0; } 40% { opacity: 0.35; } 100% { opacity: 0; } }
+
 /* Без движения: всё замирает; то, что без движения бессмысленно, прячется */
 .no-motion .ambient, .no-motion .ambient * { animation: none !important; }
-.no-motion .amb-streak, .no-motion .amb-steam, .no-motion .amb-sheen, .no-motion .amb-mote, .no-motion .amb-moth, .no-motion .amb-car { display: none; }
+.no-motion .amb-streak, .no-motion .amb-steam, .no-motion .amb-sheen, .no-motion .amb-mote, .no-motion .amb-moth, .no-motion .amb-car, .no-motion .amb-shade, .no-motion .amb-dip { display: none; }
+
+/* тревожные мелочи вне слоя ambient (буквы, записка) — тоже замирают */
+.no-motion .life-letter .mag text, .no-motion .life-note .note-a, .no-motion .life-note .note-b { animation: none !important; }
 
 @media (prefers-reduced-motion: reduce) {
+  .life-letter .mag text, .life-note .note-a, .life-note .note-b { animation: none !important; }
   .ambient, .ambient * { animation: none !important; }
   .amb-streak, .amb-steam, .amb-sheen, .amb-mote, .amb-moth, .amb-car { display: none; }
 }

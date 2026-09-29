@@ -45,7 +45,8 @@ export default {
   },
 
   // Закон 3: изменения из другого мира приходят, когда в комнате никого нет
-  sceneClasses: (s) => [s.flags.lettersMoved && 'letters-moved', s.flags.uhodi && 'uhodi-on'].filter(Boolean),
+  // uneasy — дом будто живёт сам: мелкие тревожные события в комнате и на кухне (scenes/ambient.js)
+  sceneClasses: (s) => ['uneasy', s.flags.lettersMoved && 'letters-moved', s.flags.uhodi && 'uhodi-on'].filter(Boolean),
 
   intro: [
     ['card', 'Нижние Броды', '01:46 · одна чашка на столе', 'np'],

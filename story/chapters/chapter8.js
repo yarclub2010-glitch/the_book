@@ -42,7 +42,7 @@ export default {
   },
 
   sceneClasses: (s) => [
-    'w-hint-on', 'w-p7-on',
+    'w-hint-on', 'w-p7-on', 'wp-reply-on', 'wp-m2-on',
     s.flags.sent && 'w-8a-on',
     s.flags.reply && 'w-8b-on',
     !morning(s) && 'vera-here',

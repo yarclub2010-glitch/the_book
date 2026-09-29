@@ -21,7 +21,7 @@ export default {
   locations: {
     kitchen: { name: 'Кухня', scene: () => 'kitchen-p-evening', music: () => 'p-night' },
   },
-  sceneClasses: () => ['w-hint-on', 'w-p7-on', 'w-x8-on'],
+  sceneClasses: () => ['w-hint-on', 'w-p7-on', 'w-x8-on', 'wp-reply-on', 'wp-m2-on'],
 
   end: {
     kicker: 'Концовка',

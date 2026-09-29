@@ -121,15 +121,14 @@ function curtain(key, P, poly, [tx, ty]) {
 }
 
 // Свет фар с улицы: светлая косая полоса проходит по стене (включается событием life-car)
-function sweep(key, P, [x0, y0, x1, y1], color = '#fff1d6', o = 0.13) {
-  const id = `amb-${key}-sweep`;
+function sweep(key, P, [x0, y0, x1, y1], color = '#fff1d6', o = 0.22) {
   const [ax, ay] = P.I(x0, y0);
   const [bx, by] = P.I(x1, y1);
   const w = 150 * P.k;
-  return `<defs><clipPath id="${id}"><rect x="${n(ax)}" y="${n(ay)}" width="${n(bx - ax)}" height="${n(by - ay)}"/></clipPath>`
-    + `<linearGradient id="${id}-g" x1="0" x2="1"><stop offset="0" stop-color="${color}" stop-opacity="0"/><stop offset="0.5" stop-color="${color}" stop-opacity="1"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>`
-    + `<g clip-path="url(#${id})"><g class="amb-car" style="--d:${n(bx - ax + w * 2)}px;--o:${o};mix-blend-mode:screen">`
-    + `<polygon points="${n(ax - w * 1.6)},${n(ay)} ${n(ax - w * 0.6)},${n(ay)} ${n(ax - w)},${n(by)} ${n(ax - w * 2)},${n(by)}" fill="url(#${id}-g)"/></g></g>`;
+  // без clipPath и градиента (надёжно рисуется при анимации): мягкая полоса — три косые полосы
+  // разной ширины; появляется у левого края стены и гаснет у правого
+  const band = (k) => `<polygon points="${n(ax + w * (0.9 - 0.5 * k))},${n(ay)} ${n(ax + w * (0.9 + 0.5 * k))},${n(ay)} ${n(ax + w * (0.5 + 0.5 * k))},${n(by)} ${n(ax + w * (0.5 - 0.5 * k))},${n(by)}" fill="${color}" opacity="0.33"/>`;
+  return `<g class="amb-car" style="--d:${n(bx - ax - w)}px;--o:${o};mix-blend-mode:screen">${band(1)}${band(0.6)}${band(0.3)}</g>`;
 }
 
 // Ночная бабочка кружит у лампы: то прилетает, то пропадает в темноте (SMIL — в своей системе координат)
@@ -152,6 +151,31 @@ function led(P, [px, py], color, t, lo = 0.15) {
     + `<circle class="amb-led" cx="${n(x)}" cy="${n(y)}" r="${n(7 * P.k)}" fill="${color}" opacity="0.25" style="--t:${t}s;--lo:0;mix-blend-mode:screen"/>`;
 }
 
+// Предмет на картинке чуть сдвигается сам: копия того же кадра внутри контура предмета
+// (класс cls на сцене запускает одноразовое движение; origin — точка опоры в пикселях картинки)
+function nudge(key, P, poly, [ox, oy], cls) {
+  const id = `amb-${key}-${cls}`;
+  const [x, y] = P.I(ox, oy);
+  return `<clipPath id="${id}"><polygon points="${pts(P, poly)}"/></clipPath>`
+    + `<g clip-path="url(#${id})"><g class="amb-nudge ${cls}-part" style="transform-origin:${n(x)}px ${n(y)}px">${P.image()}</g></g>`;
+}
+
+// Тень проходит по стене — будто кто-то прошёл между лампой и стеной
+function shadowPass(key, P, [x0, y0, x1, y1]) {
+  const [ax, ay] = P.I(x0, y0);
+  const [bx, by] = P.I(x1, y1);
+  const w = (bx - ax) * 0.28;
+  // без clipPath, фильтров и градиентов (надёжно рисуется при анимации): мягкий край — стопкой
+  // вложенных полупрозрачных эллипсов. Тень входит у правого края стены и гаснет у левого.
+  const cx = bx - w;
+  const cy = (ay + by) / 2 + (by - ay) * 0.1;
+  const rings = [1, 0.82, 0.66, 0.5, 0.36].map((k) => `<ellipse cx="${n(cx)}" cy="${n(cy)}" rx="${n(w * 0.75 * k)}" ry="${n((by - ay) * 0.52 * k)}" fill="#050308" fill-opacity="0.2"/>`).join('');
+  return `<g class="amb-shade" style="--d:${n(-(bx - ax) + w * 2)}px">${rings}</g>`;
+}
+
+// Свет на миг проседает — лампа «моргает» (тёмная пелена на весь кадр)
+const dip = () => '<rect class="amb-dip" width="1600" height="900" fill="#05040a"/>';
+
 const wrap = (s) => (s ? `<g class="ambient" pointer-events="none" aria-hidden="true">${s}</g>` : '');
 
 // ---------- Сцены ----------
@@ -167,6 +191,10 @@ function kitchenNP(time) {
   else {
     s += moth(P, [690, 300], 70, 26, 44);
     s += sweep('knp', P, [560, 0, 1376, 430]);
+    // тревога (глава 1): кружка сама чуть поворачивается, по стене проходит тень, свет проседает
+    s += nudge('knp', P, [[752, 505], [832, 505], [832, 590], [752, 590]], [790, 585], 'life-mug');
+    s += shadowPass('knp', P, [560, 0, 1376, 500]);
+    s += dip();
   }
   return s;
 }
@@ -241,7 +269,12 @@ const BUILD = {
   },
 
   // Комната Тихона НП (R-NP-1): экран ноутбука чуть дрожит (пыль и лампа — уже в сцене)
-  'room-np-night': () => screen(IMG.rnp) + sweep('rnp', IMG.rnp, [760, 0, 1376, 330]),
+  'room-np-night': () => screen(IMG.rnp) + sweep('rnp', IMG.rnp, [760, 0, 1376, 330])
+    // тревога (глава 1): микрофон на стойке сам качнётся, экран дёрнется, по стене пройдёт тень
+    + nudge('rnp', IMG.rnp, [[440, 118], [625, 138], [625, 322], [560, 322], [440, 245]], [600, 305], 'life-mic')
+    + `<polygon class="amb-glitch" points="${pts(IMG.rnp, [[371, 245], [440, 232], [463, 305], [393, 318]])}" fill="#dfe8ff"/>`
+    + shadowPass('rnp', IMG.rnp, [640, 0, 1376, 520])
+    + dip(),
   'room-np-evening': () => screen(IMG.rnp) + sweep('rnp', IMG.rnp, [760, 0, 1376, 330]),
   // Утро (R-NP-1-morning): пылинки плывут в косом луче из окна
   'room-np-morning': () => {
@@ -303,8 +336,25 @@ const BIRDS = { every: [18, 40], sfx: 'birds' };
 const PIGEON = { every: [40, 90], sfx: 'pigeon' };
 const TWITCH = { every: [35, 80], cls: 'life-twitch', dur: 0.8 };
 
+// Тревожные мелочи главы 1: дом будто живёт сам — только пока глава ставит класс uneasy
+const U = (every, cls, dur, sfx) => ({ every, cls, dur, sfx, when: 'uneasy' });
+const UNEASY_KITCHEN = [
+  U([18, 36], 'life-letter', 0.9, 'magnet'),
+  U([22, 44], 'life-note', 1.6),
+  U([30, 60], 'life-mug', 1.4, 'clink'),
+  U([26, 50], 'life-dip', 1.3, 'buzz'),
+  U([34, 70], 'life-shade', 4.2, 'creak'),
+  U([40, 80], 'life-photo', 2.4),
+];
+const UNEASY_ROOM = [
+  U([20, 40], 'life-mic', 2.2, 'creak'),
+  U([24, 48], 'life-screen', 0.7, 'static'),
+  U([28, 56], 'life-dip', 1.3, 'buzz'),
+  U([36, 72], 'life-shade', 4.2, 'steps'),
+];
+
 const LIFE = {
-  'kitchen-np-night': [CAR, PIPES, MOTH, NEIGHBORS],
+  'kitchen-np-night': [CAR, PIPES, MOTH, NEIGHBORS, ...UNEASY_KITCHEN],
   'kitchen-np-evening': [CAR, PIPES, MOTH, NEIGHBORS],
   'kitchen-np-morning': [BIRDS, PIPES],
   'kitchen-p': [CAR_SOUND, NEIGHBORS],
@@ -316,7 +366,7 @@ const LIFE = {
   'hall-np-night': [TWITCH, PIPES, NEIGHBORS],
   'hall-np-evening': [TWITCH, PIPES, NEIGHBORS],
   'hall-p': [{ every: [20, 40], sfx: 'leak', when: 'vera-here' }, PIGEON],
-  'room-np-night': [CAR, PIPES],
+  'room-np-night': [CAR, PIPES, ...UNEASY_ROOM],
   'room-np-evening': [CAR, PIPES],
   'room-np-morning': [BIRDS, PIPES],
   'room-p': [{ every: [25, 55], sfx: 'crackle', cls: 'life-solder', dur: 1.8 }, { every: [45, 90], sfx: 'static', cls: 'life-radio', dur: 1.1 }, PIGEON],

@@ -24,6 +24,9 @@ const P_ROOTS = [40, 36, 35, 38];
 const MUSIC_FILES = ['title', 'np-night', 'np-morning', 'p-night', 'tension', 'dom03', 'vera', 'finale'];
 // записи громче синтеза — чуть приглушаем, чтобы музыка оставалась под диалогом
 const FILE_LEVEL = 0.55;
+// Живой шёпот «…ходи…» (записан голосом, assets/voice/whisper-N.m4a): если записи есть — звучит
+// случайная из них, «из-за двери»; если нет — шёпот синтезируется
+const WHISPER_FILES = [1, 2, 3, 4, 5, 6].map((i) => `assets/voice/whisper-${i}.m4a`);
 
 class Audio {
   constructor() {
@@ -48,6 +51,26 @@ class Audio {
           .then((r) => (r.ok ? r.arrayBuffer() : null))
           .then((b) => b && c.decodeAudioData(b))
           .then((buf) => { if (buf) this.files[n] = buf; })
+          .catch(() => {});
+      });
+      // шёпот: при загрузке обрезаем тишину в начале и запоминаем пик для выравнивания громкости
+      this.whispers = [];
+      WHISPER_FILES.forEach((u) => {
+        fetch(u)
+          .then((r) => (r.ok ? r.arrayBuffer() : null))
+          .then((b) => b && c.decodeAudioData(b))
+          .then((buf) => {
+            if (!buf) return;
+            const d = buf.getChannelData(0);
+            let peak = 0;
+            for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
+            let start = 0;
+            while (start < d.length && Math.abs(d[start]) < peak * 0.08) start++;
+            let end = d.length - 1;
+            while (end > start && Math.abs(d[end]) < peak * 0.05) end--;
+            const pad = Math.floor(buf.sampleRate * 0.05);
+            this.whispers.push({ buf, peak: peak || 1, from: Math.max(0, start - pad) / buf.sampleRate, to: Math.min(d.length, end + pad * 4) / buf.sampleRate });
+          })
           .catch(() => {});
       });
       this.master = c.createDynamicsCompressor();
@@ -1198,7 +1221,36 @@ const SFX = {
   // Шёпот: вдох и «…ходи…»
   whisper(a, t) {
     a.burst(a.sfxBus, { t, dur: 0.35, vol: 0.03, freq: 1200, q: 0.6, attack: 0.15, send: 0.4 });
-    whisperWord(a, a.sfxBus, t + 0.3, { vol: 0.45, send: 0.9 });
+    const w = a.whispers && a.whispers.length ? a.whispers[Math.floor(Math.random() * a.whispers.length)] : null;
+    if (!w) {
+      whisperWord(a, a.sfxBus, t + 0.3, { vol: 0.45, send: 0.9 });
+      return;
+    }
+    // живая запись «из-за двери»: без низа и верха, тихо, с большим эхом, чуть медленнее и ниже
+    const c = a.ctx;
+    const src = c.createBufferSource();
+    src.buffer = w.buf;
+    src.playbackRate.value = 0.94;
+    const hp = c.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 260;
+    const lp = c.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 3200;
+    const g = c.createGain();
+    const level = 0.32 / w.peak;
+    const st = t + 0.3;
+    const len = (w.to - w.from) / 0.94;
+    g.gain.setValueAtTime(0, st);
+    g.gain.linearRampToValueAtTime(level, st + 0.06);
+    g.gain.setValueAtTime(level, st + Math.max(0.1, len - 0.25));
+    g.gain.linearRampToValueAtTime(0, st + len);
+    src.connect(hp).connect(lp).connect(g).connect(a.sfxBus);
+    const sg = c.createGain();
+    sg.gain.value = 0.9;
+    g.connect(sg).connect(a.rev(a.sfxBus));
+    src.start(st, w.from, w.to - w.from);
+    src.stop(st + len + 0.1);
   },
   // Поезд: приближается слева, проходит, уходит вправо — гул, мотор с доплером,
   // стук колёс парами, дрожь оконного стекла
@@ -1565,6 +1617,12 @@ const SFX = {
   static(a, t) {
     a.burst(a.ambBus, { t, dur: 0.9, vol: 0.022, freq: 1600, q: 0.6, attack: 0.08 });
     a.tone(a.ambBus, { freq: 1900, t: t + 0.15, dur: 0.5, vol: 0.006, glide: 1.6, attack: 0.05 });
+  },
+  // Лампа гудит и трещит на скачке напряжения
+  buzz(a, t) {
+    a.tone(a.ambBus, { freq: 100, type: 'sawtooth', t, dur: 1.1, vol: 0.012, attack: 0.02, filter: 900 });
+    a.tone(a.ambBus, { freq: 200, type: 'square', t, dur: 0.9, vol: 0.004, attack: 0.02, filter: 1400 });
+    [0, 0.16, 0.31, 0.72].forEach((off) => a.burst(a.ambBus, { t: t + off, dur: 0.03, vol: 0.05, type: 'highpass', freq: 3000, attack: 0.001 }));
   },
   // Бабочка бьётся о плафон: мелкие сухие касания
   moth(a, t) {
