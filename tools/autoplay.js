@@ -75,6 +75,12 @@ export async function run(game) {
     await W(300);
     for (let i = 0; i < 6 && game.mode !== 'explore' && game.mode !== 'end'; i++) await play(() => 0, 300);
     check(game.mode === 'explore' || game.mode === 'end', `${id}: вступление пройдено`);
+    // «Что дальше?» (Q): у каждой главы с исследованием есть цель — и она показывается мыслью
+    if (game.mode === 'explore') {
+      game.goal();
+      const said = document.querySelector('#pop').textContent;
+      check(!!game.chapter.goal && said === game.chapter.goal(game.state), `${id}: «Что дальше?» — «${said.slice(0, 50)}…»`);
+    }
   };
   // длинные финалы при медленной машине: доиграть сценку до экрана конца, а не проверять на полпути
   const playToEnd = async () => {
@@ -235,7 +241,7 @@ export async function run(game) {
       check(flag('sawDate'), 'ch6: дата на закладке найдена');
       await go('room', 'room-np-morning');
       await click('laptop');
-      check(flag('laptopOpen'), 'ch6: ноутбук открыт паролем 1409');
+      check(flag('laptopOpen'), 'ch6: ноутбук открыт паролем 1209');
       check(JSON.parse(localStorage.getItem('thebook:laws') || '[]').includes('sameday'), 'ch6: в дневнике законов — «один и тот же день»');
       await go('kitchen', 'kitchen-np-morning');
       await click('miri', (t) => t.findIndex((x) => x.includes('включи музыку')));

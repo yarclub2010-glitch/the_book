@@ -189,6 +189,8 @@ export class Game {
         this.game.classList.toggle('ui-hidden');
       } else if (e.key === 'l' || e.key === 'д') {
         this.openPanel('log');
+      } else if (e.key === 'q' || e.key === 'й') {
+        this.goal();
       }
     });
     window.addEventListener('keyup', (e) => {
@@ -212,6 +214,7 @@ export class Game {
     $('#btn-about').addEventListener('click', () => this.openPanel('about'));
 
     // быстрое меню
+    $('#q-goal').addEventListener('click', () => this.goal());
     $('#q-log').addEventListener('click', () => this.openPanel('log'));
     $('#q-auto').addEventListener('click', () => this.toggleAuto());
     $('#q-skip').addEventListener('click', () => {
@@ -1054,6 +1057,14 @@ export class Game {
     hint.hidden = !onHint;
     hint.onclick = onHint || null;
     el.classList.add('on');
+  }
+
+  // «Что дальше?» — герой вспоминает, чем он сейчас занят (глава решает по флажкам: goal(state) → строка).
+  // Не решение, а направление: куда смотреть и почему.
+  goal() {
+    if (!this.state || this.mode !== 'explore' || this.panelOpen()) return;
+    const text = (this.chapter.goal && this.chapter.goal(this.state)) || 'Осмотреться. Что-нибудь здесь да не так.';
+    this.thought(text);
   }
 
   // at — точка щелчка в долях кадра [x, y]; без неё мысль появляется вверху по центру
