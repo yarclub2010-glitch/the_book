@@ -193,12 +193,28 @@ export async function run(game) {
     },
     async ch5() {
       await start('ch5', {});
+      // загадка «Спросить двойника»: без паяльника вопрос не написать
+      await go('kitchen', 'kitchen-p-evening');
+      await click('book');
+      await scene('book-p');
+      await click('marginL');
+      check(!flag('asked'), 'ch5: без паяльника вопрос не выжечь');
+      await go('room', 'room-p');
+      await click('solder');
+      check(flag('hasSolder'), 'ch5: паяльник взят');
+      await go('kitchen', 'kitchen-p-evening');
+      await click('book');
+      await scene('book-p');
+      await click('marginL');
+      check(flag('asked'), 'ch5: вопрос выжжен');
+      check(!flag('hint'), 'ch5: ответа нет, пока герой у книги');
       await go('room', 'room-p');
       await fire('hint');
       await go('kitchen', 'kitchen-p-evening');
       await click('book');
       await scene('book-p');
       await click('marginL');
+      check(flag('readHint'), 'ch5: ответ двойника прочитан');
       await go('kitchen', 'kitchen-p-evening');
       await click('sink');
       await scene('bread-p');
@@ -210,6 +226,18 @@ export async function run(game) {
     },
     async ch6() {
       await start('ch6', {});
+      // загадка «Пароль»: без даты ноутбук не открыть
+      await go('room', 'room-np-morning');
+      await click('laptop');
+      check(!flag('laptopOpen'), 'ch6: без даты ноутбук заперт');
+      await go('vera', 'vera-np');
+      await click('nightstand');
+      check(flag('sawDate'), 'ch6: дата на закладке найдена');
+      await go('room', 'room-np-morning');
+      await click('laptop');
+      check(flag('laptopOpen'), 'ch6: ноутбук открыт паролем 1409');
+      check(JSON.parse(localStorage.getItem('thebook:laws') || '[]').includes('sameday'), 'ch6: в дневнике законов — «один и тот же день»');
+      await go('kitchen', 'kitchen-np-morning');
       await click('miri', (t) => t.findIndex((x) => x.includes('включи музыку')));
       check((flag('tries') || 0) >= 1, 'ch6: неверная команда засчитана');
       await click('miri', (t) => {
@@ -337,7 +365,10 @@ export async function run(game) {
     ['ch9 → Мост', () => chapters.ch9({ stayedCold: true, sentTrack: true, choice: 'hide' }, 'Отпустить', 'Мост')],
     ['ch9 → Слияние', () => chapters.ch9({ stayedCold: true, returnedBrush: true, sentTrack: true, choice: 'hide' }, 'Держать', 'Слияние')],
   ];
+  // ?autoplay=ch5 — прогнать только главы, чьё имя начинается так (для быстрой проверки одной главы)
+  const only = new URLSearchParams(location.search).get('autoplay');
   for (const [name, fn] of steps) {
+    if (only && !name.startsWith(only)) continue;
     log(true, `— ${name} —`);
     try {
       await fn();
