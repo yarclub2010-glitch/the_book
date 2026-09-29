@@ -80,7 +80,8 @@ export async function run(game) {
   const playToEnd = async () => {
     for (let i = 0; i < 400 && game.mode !== 'end'; i++) await play(() => 0, 20);
   };
-  const ended = (id, title) => {
+  const ended = async (id, title) => {
+    await playToEnd();
     const t = document.querySelector('#end-title-text').textContent;
     check(game.mode === 'end' && (!title || t.includes(title)), `${id}: экран конца «${t}»`);
   };
@@ -99,7 +100,7 @@ export async function run(game) {
       check(game.puzzle, 'ch1: загадка с буквами открылась');
       for (const ch of ['Х', 'О', 'Д', 'И']) await click(`L${ch}`);
       await settle();
-      ended('ch1');
+      await ended('ch1');
     },
     async ch2(stay = true) {
       await start('ch2', {});
@@ -129,7 +130,7 @@ export async function run(game) {
       check(game.puzzle, 'ch2: загадка с обрывками открылась');
       for (const f of ['f17', 'f27', 'f14', 'f20']) await click(f);
       await settle();
-      ended('ch2');
+      await ended('ch2');
       check(JSON.parse(localStorage.getItem('thebook:legacy') || '{}').stayedCold !== undefined, 'ch2: решение про холод записано в память');
       void stay;
     },
@@ -170,7 +171,7 @@ export async function run(game) {
       await click('sill');
       await scene('book-np');
       await settle();
-      ended('ch3');
+      await ended('ch3');
     },
     async ch4() {
       await start('ch4', {});
@@ -188,7 +189,7 @@ export async function run(game) {
       await click('photo');
       await minutesTo(40);
       await play((t) => t.findIndex((x) => x.includes('Держать')));
-      ended('ch4');
+      await ended('ch4');
     },
     async ch5() {
       await start('ch5', {});
@@ -205,7 +206,7 @@ export async function run(game) {
       check(flag('hasHeadphones'), 'ch5: наушники найдены');
       await go('hall', 'hall-p');
       await click('vera');
-      ended('ch5');
+      await ended('ch5');
     },
     async ch6() {
       await start('ch6', {});
@@ -216,7 +217,7 @@ export async function run(game) {
         if (i >= 0) return i;
         return t.findIndex((x) => x.includes('Отправлю'));
       });
-      ended('ch6');
+      await ended('ch6');
     },
     async ch7(choice) {
       await start('ch7', {});
@@ -234,13 +235,13 @@ export async function run(game) {
       await scene('note-p');
       await click('note', (t) => t.findIndex((x) => x.includes(choice === 'show' ? 'Показать' : 'Спрятать')));
       check(game.state.flags.uv, 'ch7: «Не» проступило в ультрафиолете');
-      ended('ch7');
+      await ended('ch7');
       check(game.nextId === (choice === 'show' ? 'ch8x' : 'ch8'), `ch7: развилка ведёт в ${game.nextId}`);
     },
     async ch8x() {
       await start('ch8x', { choice: 'show' });
       await play();
-      ended('ch8x', 'Обмен');
+      await ended('ch8x', 'Обмен');
     },
     async ch8() {
       await start('ch8', { choice: 'hide' });
@@ -260,8 +261,7 @@ export async function run(game) {
       await click('photo');
       await minutesTo(40);
       await play((t) => t.findIndex((x) => x.includes('Держать')));
-      await playToEnd();
-      ended('ch8');
+      await ended('ch8');
     },
     async ch9(legacy, pick, title) {
       await start('ch9', legacy);
@@ -274,8 +274,7 @@ export async function run(game) {
       await minutesTo(40);
       await play((t) => t.findIndex((x) => x.includes(pick)));
       check(game.state.flags.ne, 'ch9: «Не» на фото-якоре');
-      await playToEnd();
-      ended('ch9', title);
+      await ended('ch9', title);
     },
   };
 

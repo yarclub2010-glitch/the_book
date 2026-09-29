@@ -11,6 +11,13 @@
 
 const morning = (s) => s.time === 'morning';
 const hhmm = (m) => `6:${String(m).padStart(2, '0')}`;
+// Эхо поступков под финалом: от них зависела концовка (память истории)
+export const echoOf = (legacy = {}) => [
+  legacy.stayedCold ? '● Ты не сбежал от холода, когда он был рядом' : '○ Ты сбежал от холода — и он тоже',
+  legacy.returnedBrush ? '● Ты вернул Верину кисточку туда, где её ждали' : '○ Верина кисточка так и осталась не на месте',
+  legacy.sentTrack ? '● Он отправил Вере твой трек — когда жил твоей жизнью' : '○ Твой трек так и не дошёл до Веры',
+];
+
 const trust = (s) => ['stayedCold', 'returnedBrush', 'sentTrack'].filter((k) => s.legacy && s.legacy[k]).length;
 
 const ENDINGS = {
@@ -78,6 +85,7 @@ export default {
     kicker: 'Концовка',
     title: (s) => (ENDINGS[s.flags.ending] || ENDINGS.split).title,
     text: (s) => (ENDINGS[s.flags.ending] || ENDINGS.split).text,
+    echo: (s) => echoOf(s.legacy),
   },
 
   intro: [

@@ -549,6 +549,14 @@ button { font: inherit; color: inherit; }
 .muted { color: var(--ui-muted); }
 
 .log-list { display: flex; flex-direction: column; gap: 1cqw; max-height: 60cqh; overflow: auto; }
+/* дневник законов — вверху журнала */
+.laws { border: 0.1cqw solid var(--ui-line); border-radius: 0.8cqw; padding: 0.9cqw 1.2cqw; background: rgba(243, 181, 63, 0.05); }
+.laws summary { cursor: pointer; color: var(--accent); font-size: 1.15cqw; letter-spacing: 0.04em; }
+.law { display: grid; gap: 0.2cqw; margin-top: 0.9cqw; }
+.law b { font-size: 1.15cqw; color: #f3dfb8; }
+.law span { color: var(--ui-muted); line-height: 1.45; }
+/* эхо поступков под концовкой */
+.end .echo { display: inline-block; margin-top: 0.6cqw; font-size: 1.1cqw; line-height: 1.7; color: #b9ad97; }
 .log-line b { display: block; font-size: 1.1cqw; margin-bottom: 0.2cqw; }
 .log-line .w-np { color: var(--np-text); }
 .log-line .w-p { color: var(--p-name-bg); }

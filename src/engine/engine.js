@@ -5,6 +5,7 @@
 
 import { audio } from './audio.js';
 import { lifeFor } from '../scenes/ambient.js';
+import { LAWS } from '../../story/laws.js';
 import { Stage, titleBackdrop } from './stage.js';
 import { scenes } from '../scenes/index.js';
 import chapter1 from '../../story/chapters/chapter1.js';
@@ -201,6 +202,7 @@ export class Game {
     // новая игра — с чистой памятью истории
     $('#btn-new').addEventListener('click', () => {
       store.set('legacy', {});
+      store.set('laws', []);
       this.startChapter(FIRST);
     });
     $('#btn-continue').addEventListener('click', () => this.load(store.get('auto')));
@@ -341,7 +343,12 @@ export class Game {
 
   renderLog() {
     const box = $('#log-list');
-    box.innerHTML = this.log.map((l) => `
+    const known = store.get('laws', []);
+    const laws = LAWS.filter((l) => known.includes(l.id));
+    const diary = laws.length
+      ? `<details class="laws" open><summary>Что я понял про два мира · ${laws.length} из ${LAWS.length}</summary>${laws.map((l) => `<div class="law"><b>${esc(l.title)}</b><span>${esc(l.text)}</span></div>`).join('')}</details>`
+      : '';
+    box.innerHTML = diary + this.log.map((l) => `
       <div class="log-line ${l.kind}">
         ${l.name ? `<b class="w-${l.world}">${esc(l.name)}</b>` : ''}
         <span>${esc(l.text).replace(/\{([^}]*)\}/g, '<span class="smudge">$1</span>')}</span>
@@ -766,7 +773,18 @@ export class Game {
     }
   }
 
+  // Дневник законов: новая запись — когда в главе выполнено её условие (story/laws.js)
+  checkLaws() {
+    if (!this.state || !this.chapter) return;
+    const known = store.get('laws', []);
+    const fresh = LAWS.filter((l) => !known.includes(l.id) && l.when(this.chapter.id, this.state.flags || {}));
+    if (!fresh.length) return;
+    store.set('laws', [...known, ...fresh.map((l) => l.id)]);
+    this.toast(`В дневник: «${fresh[fresh.length - 1].title}»`);
+  }
+
   checkRules() {
+    this.checkLaws();
     if (this.mode !== 'explore') return;
     for (const rule of this.chapter.rules || []) {
       const key = `rule:${rule.id}`;
@@ -859,6 +877,7 @@ export class Game {
         Object.assign(this.state.flags, a);
         this.applySceneState();
         this.updateCarry();
+        this.checkLaws();
         break;
       case 'time':
         this.state.time = a;
@@ -993,7 +1012,12 @@ export class Game {
     $('#card-title').textContent = title;
     $('#card-sub').textContent = sub;
     el.classList.add('on');
-    await Promise.race([sleep(this.skipping ? 200 : 2800), this.waitNext()]);
+    // титр держится по длине текста (длинную строку успеваешь прочесть); первые мгновения
+    // щелчок его не закрывает — чтобы щелчок по прошлой реплике не смахнул титр сразу
+    const hold = this.skipping ? 200 : Math.max(3200, 1400 + (title.length + sub.length) * 60);
+    if (!this.skipping) await sleep(1100);
+    if (this.token !== token) return;
+    await Promise.race([sleep(Math.max(0, hold - 1100)), this.waitNext()]);
     this.advance = null;
     if (this.token !== token) return;
     el.classList.remove('on');
@@ -1077,7 +1101,9 @@ export class Game {
     $('#end-title-text').textContent = pick(end.title) || `Конец главы: «${this.chapter.title.replace(/^Глава \d+\. /, '')}»`;
     const text = typeof end.text === 'function' ? end.text(this.state) : end.text || [];
     $('#end-text').innerHTML = text.map(esc).join('<br>');
-    $('#end-muted').textContent = next ? '' : 'Продолжение следует.';
+    // финалы: эхо поступков, от которых зависела концовка (end.echo) — чтобы было понятно, почему так
+    const echo = end.echo ? end.echo(this.state) : [];
+    $('#end-muted').innerHTML = echo.length ? `<span class="echo">${echo.map(esc).join('<br>')}</span>` : '';
     $('#end-next').hidden = !next;
     if (next) $('#end-next').textContent = `Дальше: ${next.title}`;
     $('#end').classList.add('on');
