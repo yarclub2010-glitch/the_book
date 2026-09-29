@@ -8,6 +8,9 @@ const W = (ms) => new Promise((r) => setTimeout(r, ms));
 const finish = () => document.getAnimations().forEach((a) => { try { a.finish(); } catch { /* уже закончилась */ } });
 
 export async function run(game) {
+  // игра ставит время на паузу, пока вкладку не видно (document.hidden); прогону это мешает —
+  // он должен идти и в свёрнутом окне или скрытой панели
+  Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
   const report = [];
   const saved = { ...localStorage };
   const box = document.createElement('pre');

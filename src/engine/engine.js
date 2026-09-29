@@ -882,7 +882,8 @@ export class Game {
         this.thought(a);
         break;
       case 'hint':
-        this.hint(a);
+        // на сенсорном экране не щёлкают, а нажимают
+        this.hint(matchMedia('(pointer: coarse)').matches ? a.replace(/^Щёлкайте/, 'Нажимайте') : a);
         break;
       case 'set':
         Object.assign(this.state.flags, a);
