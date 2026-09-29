@@ -487,8 +487,7 @@ button { font: inherit; color: inherit; }
 /* наведение — буква дрогнула, как магнит на дверце */
 .mag-l:hover { animation: mag-rattle 0.7s ease-out; }
 @keyframes mag-rattle { 0% { transform: rotate(var(--r)); } 20% { transform: rotate(calc(var(--r) - 9deg)); } 45% { transform: rotate(calc(var(--r) + 6deg)); } 70% { transform: rotate(calc(var(--r) - 2deg)); } 100% { transform: rotate(var(--r)); } }
-.tagline { font-size: 1.7cqw; color: #e9dfcf; margin: 1cqw 0 0.6cqw; letter-spacing: 0.04em; }
-.tagline-sub { font-size: 1.15cqw; color: rgba(233, 223, 207, 0.55); margin: 0 0 2.8cqw; font-style: italic; letter-spacing: 0.02em; }
+.tagline { font-size: 1.7cqw; color: #e9dfcf; margin: 1cqw 0 3cqw; letter-spacing: 0.04em; }
 /* под «Продолжить» — где остановился */
 .menu button small { display: block; font-family: "Onest", sans-serif; text-transform: none; letter-spacing: 0.02em; font-size: 1cqw; color: rgba(255, 255, 255, 0.45); margin-top: 0.1cqw; }
 /* найденные концовки */
