@@ -12,7 +12,7 @@ class NoCache(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 
-port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+port = int(sys.argv[1]) if len(sys.argv) > 1 else 8016
 root = os.path.dirname(os.path.abspath(__file__))
 handler = functools.partial(NoCache, directory=root)
 http.server.ThreadingHTTPServer(('', port), handler).serve_forever()
