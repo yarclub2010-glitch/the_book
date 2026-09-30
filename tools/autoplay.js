@@ -267,9 +267,17 @@ export async function run(game) {
       await go('vera', 'vera-p');
       await click('naillamp');
       check(flag('hasLamp'), 'ch7: лампа взята');
+      // загадка «Ключ»: ящик заперт, ключ — в хлебнице, под батоном
+      await go('room', 'room-p');
+      await click('drawer');
+      check(flag('triedDrawer') && !flag('opened'), 'ch7: ящик заперт');
+      await go('kitchen', 'kitchen-p-evening');
+      await click('sink');
+      check(flag('hasKey'), 'ch7: ключ нашёлся в хлебнице');
       await go('room', 'room-p');
       await click('drawer');
       await scene('note-p');
+      check(flag('opened'), 'ch7: ящик открыт ключом');
       await click('note', (t) => t.findIndex((x) => x.includes(choice === 'show' ? 'Показать' : 'Спрятать')));
       check(game.state.flags.uv, 'ch7: «Не» проступило в ультрафиолете');
       await ended('ch7');
