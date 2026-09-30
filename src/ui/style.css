@@ -145,7 +145,7 @@ button { font: inherit; color: inherit; }
 .bg-book-shifted { display: none; }
 .book-on-sill.book-shifted .bg-book { display: none; }
 .book-on-sill.book-shifted .bg-book-shifted { display: inline; }
-.book-shifted .sill-book-pose { transform: translate(9px, -4px) rotate(-3deg); }
+.book-shifted .sill-book-pose { transform: translate(10px, 1px) rotate(-9deg); }
 .book-taken .bg-nobook { display: inline; }
 /* УФ-лампа Веры включена (позже по сюжету) */
 .bg-uv { display: none !important; }
@@ -173,10 +173,8 @@ button { font: inherit; color: inherit; }
 .blink-go circle.flicker { animation: sconce-glow 5.2s steps(1, end); }
 @keyframes sconce-glow { 0% { opacity: 1; } 12% { opacity: 0; } 15% { opacity: 1; } 30% { opacity: 0; } 34% { opacity: 0.7; } 38% { opacity: 0; } 52% { opacity: 1; } 61% { opacity: 0; } 64% { opacity: 1; } 80% { opacity: 0.2; } 83% { opacity: 1; } }
 /* семафор за окном: ровный красный, иногда ~20 с зелёный (цикл 75 с) */
-.sem-cover, .sem-green { opacity: 0; animation: sem-on 75s steps(1, end) infinite; }
-.sem-red { animation: sem-off 75s steps(1, end) infinite; }
-@keyframes sem-on { 0% { opacity: 0; } 58% { opacity: 1; } 84% { opacity: 0; } }
-@keyframes sem-off { 0% { opacity: 1; } 58% { opacity: 0; } 84% { opacity: 1; } }
+.sem-red { animation: sem-breathe 4.5s ease-in-out infinite alternate; }
+@keyframes sem-breathe { from { opacity: 0.55; } to { opacity: 1; } }
 .photoglow { opacity: 0.35; transition: opacity 1.4s ease; }
 .photoglow.on { opacity: 1; }
 .rattle { transform-box: fill-box; transform-origin: 50% 100%; animation: rattle 0.16s ease-in-out infinite alternate; }

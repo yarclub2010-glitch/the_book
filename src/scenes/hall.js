@@ -7,7 +7,7 @@ const H = A.plate('assets/backgrounds/H-NP-1.jpg', 1376, 768);
 const H_OFF = A.plate('assets/backgrounds/H-NP-1-off.jpg', 1376, 768);
 const RP = A.plate('assets/backgrounds/R-P-1.jpg', 1376, 768);
 // тот же коридор в мире «Приходи» (нарисован по H-NP-1, пиксель в пиксель) — для «провала» (скример)
-const H_BLEED = A.plate('assets/backgrounds/H-P-1v2-vera.jpg', 1376, 768);
+const H_BLEED = A.plate('assets/backgrounds/H-P-1v2.jpg', 1376, 768);
 
 function buildHall(time) {
   const [x, y] = H.I(905, 172);
@@ -71,7 +71,7 @@ function hall(time) {
     hotspots: hallHotspots(),
     events: {
       // Скример (глава 3): двойник в ту же секунду у своей вешалки — одна точка (закон 6).
-      // Бра дёргается и гаснет, в полной темноте на миг вспыхивает чужой коридор — светлый, с куртками.
+      // Бра дёргается и гаснет, в полной темноте на миг вспыхивает чужой коридор — светлый, с куртками всех цветов.
       // Всё на таймерах, а не на CSS-анимации: работает и при «меньше движения».
       blackout(root) {
         const off = root.querySelector('.sconce-off');
@@ -84,7 +84,7 @@ function hall(time) {
           [0, () => lamp(false)], [110, () => lamp(true)], [260, () => lamp(false)], [330, () => lamp(true)],
           [620, () => { lamp(false); audio.sfx('cold', { caption: 'холод и гул' }); }], [720, () => lamp(true)],
           [1050, () => { lamp(false); set(dark, 0.6); }], [1500, () => set(dark, 0.96)],
-          [2500, () => { audio.sfx('sting'); set(bleed, 1); set(dark, 0); }],
+          [2500, () => { audio.sfx('shock'); set(bleed, 1); set(dark, 0); }],
           [2680, () => { set(bleed, 0); set(dark, 1); }],
           [3500, () => { set(dark, 0.5); lamp(true); }], [3600, () => lamp(false)], [3750, () => { lamp(true); set(dark, 0); }],
         ];

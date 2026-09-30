@@ -1431,6 +1431,14 @@ const SFX = {
     a.ambBus.gain.setTargetAtTime(v, t + dur, 0.8);
   },
   // Акцент смены сцены
+  // Скример: удар — суббас и шумовой всплеск, поверх резкий диссонансный кластер «струнных» и высокий визг
+  shock(a, t) {
+    a.tone(a.sfxBus, { freq: 36, t, dur: 1.8, vol: 0.4, attack: 0.003, release: 1.6 });
+    a.tone(a.sfxBus, { freq: 54, t, dur: 1.2, vol: 0.2, attack: 0.003, release: 1 });
+    a.burst(a.sfxBus, { t, dur: 0.6, vol: 0.9, type: 'lowpass', freq: 2200, q: 0.7, attack: 0.002, send: 0.5 });
+    [67, 68, 73, 74, 79, 80].forEach((m) => a.tone(a.sfxBus, { freq: midi(m), type: 'sawtooth', t, dur: 1.6, vol: 0.045, attack: 0.004, release: 1.4, filter: 5000, send: 0.7 }));
+    [94, 95, 99].forEach((m) => a.tone(a.sfxBus, { freq: midi(m), type: 'square', t: t + 0.02, dur: 0.9, vol: 0.012, attack: 0.01, release: 0.8, filter: 7000, send: 0.8 }));
+  },
   sting(a, t) {
     [40, 47, 52].forEach((n) => a.tone(a.sfxBus, { freq: midi(n), type: 'triangle', t, dur: 3, vol: 0.05, attack: 0.03, release: 3, filter: 1600, send: 0.8 }));
     a.tone(a.sfxBus, { freq: midi(28), t, dur: 2.5, vol: 0.08, attack: 0.02 });

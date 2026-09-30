@@ -61,7 +61,7 @@ function drops(P, rects, count, seed, anime = false) {
   return s;
 }
 
-// Дождь за окном: два слоя косых струй (дальний — частый и тонкий, ближний — редкий и длинный),
+// Дождь за окном: косые струи снаружи, за стеклом (тонкие и бледные),
 // порывы (весь дождь то густеет, то стихает) и брызги капель о стекло. Всё обрезано рамой стекла.
 // rects — стёкла в пикселях картинки; o — насколько заметен (ночью в НП дождь едва виден в темноте)
 function rain(key, P, rects, { far = 28, near = 8, splats = 8, seed = 1, color = '#e4eaff', o = 1, slant = 0.14 } = {}) {
@@ -83,8 +83,8 @@ function rain(key, P, rects, { far = 28, near = 8, splats = 8, seed = 1, color =
     return s;
   };
   let s = `${clip}<g clip-path="url(#${id})"><g class="amb-gust" style="--t:${n(6 + r() * 5)}s;animation-delay:${n(-r() * 6)}s">`;
-  s += layer(far, [12, 24], 1, [0.16, 0.32], [0.45, 0.7]);
-  s += layer(near, [30, 52], 1.8, [0.24, 0.44], [0.6, 0.95]);
+  // только дальний слой: струи — это дождь снаружи, за стеклом; ближние яркие читались как нарисованные на окне
+  s += layer(far + near, [10, 22], 0.8, [0.1, 0.22], [0.45, 0.7]);
   s += '</g>';
   // брызги о стекло: капля ударилась — вспыхнула и растеклась
   for (let i = 0; i < splats; i++) {
@@ -151,23 +151,11 @@ function sweep(key, P, [x0, y0, x1, y1], color = '#fff1d6', o = 0.22) {
 }
 
 // Ночная бабочка кружит у лампы: то прилетает, то пропадает в темноте (SMIL — в своей системе координат)
-function moth(P, [cx, cy], rx, ry, seed) {
-  const r = A.rng(seed);
-  const [x, y] = P.I(cx, cy);
-  const k = P.k;
-  const t = n(2.8 + r() * 1.2);
-  return `<g class="amb-moth" opacity="0"><animate attributeName="opacity" values="0;0.85;0.85;0;0" keyTimes="0;0.05;0.42;0.47;1" dur="${n(24 + r() * 8)}s" begin="${n(-r() * 20)}s" repeatCount="indefinite"/>`
-    + `<g transform="translate(${n(x)} ${n(y)})"><g><animateMotion dur="${t}s" repeatCount="indefinite" path="M${n(rx * k)} 0 A${n(rx * k)} ${n(ry * k)} 0 1 1 ${n(-rx * k)} 0 A${n(rx * k)} ${n(ry * k)} 0 1 1 ${n(rx * k)} 0"/>`
-    + `<g><animateTransform attributeName="transform" type="scale" values="1 1;1 0.25;1 1" dur="0.11s" repeatCount="indefinite"/>`
-    + `<ellipse cx="${n(-2.6 * k)}" cy="0" rx="${n(3.4 * k)}" ry="${n(2 * k)}" fill="#3a2d20"/><ellipse cx="${n(2.6 * k)}" cy="0" rx="${n(3.4 * k)}" ry="${n(2 * k)}" fill="#3a2d20"/>`
-    + '</g></g></g></g>';
-}
-
 // Огонёк прибора: мигает в своём ритме
 function led(P, [px, py], color, t, lo = 0.15) {
   const [x, y] = P.I(px, py);
-  return `<circle class="amb-led" cx="${n(x)}" cy="${n(y)}" r="${n(2.2 * P.k)}" fill="${color}" style="--t:${t}s;--lo:${lo}"/>`
-    + `<circle class="amb-led" cx="${n(x)}" cy="${n(y)}" r="${n(7 * P.k)}" fill="${color}" opacity="0.25" style="--t:${t}s;--lo:0;mix-blend-mode:screen"/>`;
+  return `<circle class="amb-led" cx="${n(x)}" cy="${n(y)}" r="${n(1.5 * P.k)}" fill="${color}" style="--t:${t}s;--lo:${lo}"/>`
+    + `<circle class="amb-led" cx="${n(x)}" cy="${n(y)}" r="${n(3.6 * P.k)}" fill="${color}" opacity="0.22" style="--t:${t}s;--lo:0;mix-blend-mode:screen"/>`;
 }
 
 // Предмет на картинке чуть сдвигается сам: копия того же кадра внутри контура предмета
@@ -211,7 +199,6 @@ function kitchenNP(time) {
   s += motes(P, [590, 300, 800, 520], 10, 42, '#ffe2a8', 0.5);
   if (time === 'morning') s += steam(P, [786, 512], 43);
   else {
-    s += moth(P, [690, 300], 70, 26, 44);
     s += sweep('knp', P, [560, 0, 1376, 430]);
     // тревога (глава 1): кружка сама чуть поворачивается, по стене проходит тень, свет проседает
     const [lx, ly] = P.I(690, 380);
@@ -238,7 +225,6 @@ function kitchenP(key, P, evening) {
     [[708, 492], [767, 486], [789, 510]].forEach((m, i) => { s += steam(P, m, 55 + i).replace(/#f3e9d8/g, '#fbe9f2'); });
   } else {
     // ночью горит лампа на столе — бабочка тут тоже есть
-    s += moth(P, [690, 300], 70, 26, 57);
   }
   return s;
 }
@@ -360,7 +346,6 @@ const CAR = { every: [45, 90], cls: 'life-car', dur: 3.8, sfx: 'car' };
 const CAR_SOUND = { every: [50, 100], sfx: 'car' };
 const PIPES = { every: [55, 110], sfx: 'pipes' };
 const NEIGHBORS = { every: [80, 160], sfx: 'neighbors' };
-const MOTH = { every: [25, 55], sfx: 'moth' };
 const BIRDS = { every: [18, 40], sfx: 'birds' };
 const PIGEON = { every: [40, 90], sfx: 'pigeon' };
 const TWITCH = { every: [35, 80], cls: 'life-twitch', dur: 0.8 };
@@ -383,8 +368,8 @@ const UNEASY_ROOM = [
 ];
 
 const LIFE = {
-  'kitchen-np-night': [CAR, PIPES, MOTH, NEIGHBORS, ...UNEASY_KITCHEN],
-  'kitchen-np-evening': [CAR, PIPES, MOTH, NEIGHBORS],
+  'kitchen-np-night': [CAR, PIPES, NEIGHBORS, ...UNEASY_KITCHEN],
+  'kitchen-np-evening': [CAR, PIPES, NEIGHBORS],
   'kitchen-np-morning': [BIRDS, PIPES],
   'kitchen-p': [CAR_SOUND, NEIGHBORS],
   'kitchen-p-evening': [PIGEON, CAR_SOUND],

@@ -16,8 +16,6 @@ export const LAYOUT = {
   left: [180, 140, 720, 675], // левая страница
   right: [725, 140, 1300, 640], // правая страница
   marginL: [195, 200, 300, 630], // внешнее поле левой страницы
-  headL: [472, 183], // заголовок левой страницы (центр, поверх печатного колонтитула)
-  headR: [878, 180],
   engraving: [846, 296, 1014, 397],
 };
 
@@ -30,13 +28,6 @@ function marginText([x0, y0, x1, y1], text, cls, { size = 30, font = 'Caveat, cu
 }
 
 // Колонтитул страницы: бумажная подложка закрывает размытый печатный, сверху — наш текст
-function header([x, y], text, paper = '#dccca8') {
-  const [cx, cy] = B.I(x, y);
-  const w = text.length * 11 + 24;
-  return `<g transform="rotate(-1.5 ${cx.toFixed(1)} ${cy.toFixed(1)})">
-    <rect x="${(cx - w / 2).toFixed(1)}" y="${(cy - 11).toFixed(1)}" width="${w}" height="20" rx="10" fill="${paper}" opacity="0.8" filter="url(#bk-soft)"/>
-    <text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-family="'PT Serif', Georgia, serif" font-size="14" font-weight="700" letter-spacing="1.5" fill="#3a2a1a" opacity="0.8" style="mix-blend-mode:multiply">${text}</text></g>`;
-}
 
 // Надпись ожогом. Не шрифт, а рука: неровная плотность, подпалённый ореол, строка чуть гуляет.
 //   brush — Тихон НП: кисть и лимонный сок, прогрето утюгом — сплошные мазки;
@@ -83,9 +74,6 @@ function build(p = false) {
     <filter id="bk-soft" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="3.5"/></filter>
   </defs>`;
   let s = burnDefs + (p ? BP : B).image('class="bg"');
-  const paper = p ? '#e9c8c6' : '#dccca8';
-  s += header(LAYOUT.headL, 'ОПЫТ № 7', paper);
-  s += header(LAYOUT.headR, 'ОПЫТ № 12', paper);
   const L = LAYOUT.marginL;
   const mid = (M, at) => [(M[0] + M[2]) / 2, M[1] + (M[3] - M[1]) * at];
   // ожог дошёл до мира «Приходи» ослабленным (закон 4)

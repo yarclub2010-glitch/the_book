@@ -156,17 +156,14 @@ function commonDefs(world) {
   </defs>`;
 }
 
-// Семафор за окном: ровный красный; иногда переключается на зелёный и обратно (CSS, цикл ~75 с).
-// Красный огонь нарисован на картинке — на время зелёного его закрывает тёмное пятно.
+// Семафор за окном: красный огонь нарисован на картинке; ночью и вечером вокруг него чуть дышит ореол.
+// Переключения на зелёный нет: нарисованный огонь честно не перекрасить (на картинке он горит в двух местах),
+// а наложенный зелёный диск выглядел наклейкой на стекле. Утром в тумане — только то, что на картинке.
 function semaphore(B, [x, y], r = 11) {
   const [cx, cy] = B.I(x, y);
-  const k = B.k;
   return `<g class="semaphore">
-    <radialGradient id="sem-g"><stop offset="0" stop-color="#b8ffd0"/><stop offset="0.25" stop-color="#3dff8a" stop-opacity="0.9"/><stop offset="1" stop-color="#3dff8a" stop-opacity="0"/></radialGradient>
-    <radialGradient id="sem-r"><stop offset="0" stop-color="#ff5a45" stop-opacity="0.5"/><stop offset="1" stop-color="#ff5a45" stop-opacity="0"/></radialGradient>
-    <circle class="sem-red" cx="${cx}" cy="${cy}" r="${r * 3.2 * k}" fill="url(#sem-r)" style="mix-blend-mode:screen"/>
-    <circle class="sem-cover" cx="${cx}" cy="${cy}" r="${r * 1.25 * k}" fill="#15110f"/>
-    <circle class="sem-green" cx="${cx}" cy="${cy}" r="${r * 3.2 * k}" fill="url(#sem-g)" style="mix-blend-mode:screen"/>
+    <radialGradient id="sem-r"><stop offset="0" stop-color="#ff5a45" stop-opacity="0.45"/><stop offset="1" stop-color="#ff5a45" stop-opacity="0"/></radialGradient>
+    <circle class="sem-red" cx="${cx}" cy="${cy}" r="${r * 3 * B.k}" fill="url(#sem-r)" style="mix-blend-mode:screen"/>
   </g>`;
 }
 
@@ -176,7 +173,7 @@ function buildNP(time) {
   const night = time === 'night';
   // утро — свой кадр (та же разметка), вечер — ночной кадр чуть светлее
   let s = commonDefs('np') + (time === 'morning' ? BG.npm.image('class="bg"') : B.image(`class="bg bg-${time}"`));
-  s += semaphore(B, [247, 236]);
+  if (time !== 'morning') s += semaphore(B, [249, 236]);
   // тёплый круг от лампы на столе
   const lamp = B.I(690, 380);
   s += `<circle class="flicker" cx="${lamp[0]}" cy="${lamp[1]}" r="380" fill="url(#knp-lamp)" style="mix-blend-mode:screen"/>`;
@@ -246,22 +243,33 @@ function sillBook(B, swollen = false) {
       <polygon points="${top.join(' ')}" fill="#3f8f98" stroke="#1d3c48" stroke-width="1.4"/>
       <polygon points="${top.join(' ')}" fill="#ffc1d8" opacity="0.18"/>`;
   }
-  // мир НП — как на крупном плане (I-SILL-NP-2-book): тёмно-синий переплёт, толстый кремовый обрез,
-  // из обреза торчат закладки; справа — отсвет лампы, по переднему краю — светлая кромка
+  return sillBookNP(B);
+}
+
+// Мир НП — прежняя книга (пользователю она нравилась больше)
+function sillBookNP(B) {
+  const P4 = (dy) => [B.I(502, 477 + dy), B.I(590, 473 + dy), B.I(603, 487 + dy), B.I(510, 492 + dy)];
+  const top = P4(0);
+  const bottom = P4(6);
+  const side = [top[3], top[2], bottom[2], bottom[3]].join(' ');
+  const [sx, sy] = B.I(556, 494);
+  // книгу сдвинули в другом мире (класс book-shifted) — у нас она тоже съехала и повёрнута
+  const [px, py] = B.I(552, 484);
   return `<g class="sill-book"><g class="sill-book-pose" style="transform-origin:${px.toFixed(0)}px ${py.toFixed(0)}px">
-    <defs><linearGradient id="sb-cloth" x1="0" y1="0" x2="1" y2="0.4"><stop offset="0" stop-color="#1c2331"/><stop offset="0.6" stop-color="#2a3446"/><stop offset="1" stop-color="#46506a"/></linearGradient>
-    <linearGradient id="sb-pages" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b9a47a"/><stop offset="1" stop-color="#e6d6ae"/></linearGradient>
+    <defs><linearGradient id="sb-cloth" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2d3646"/><stop offset="0.55" stop-color="#232a37"/><stop offset="1" stop-color="#151a22"/></linearGradient>
+    <linearGradient id="sb-lamp" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffb96b" stop-opacity="0"/><stop offset="1" stop-color="#ffb96b" stop-opacity="0.22"/></linearGradient>
+    <linearGradient id="sb-pages" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2d0" stop-opacity="0.35"/><stop offset="1" stop-color="#3a2a14" stop-opacity="0.35"/></linearGradient>
     <filter id="sb-blur"><feGaussianBlur stdDeviation="4"/></filter></defs>
-    ${shadow('#000', 0.55, 'filter="url(#sb-blur)"')}
+    <ellipse cx="${sx}" cy="${sy}" rx="${62 * B.k}" ry="${7 * B.k}" fill="#000" opacity="0.55" filter="url(#sb-blur)"/>
+    <polygon points="${side}" fill="#b9a883"/>
     <polygon points="${side}" fill="url(#sb-pages)"/>
-    <g stroke="#9c875e" stroke-width="0.6" opacity="0.6">${[0.3, 0.55, 0.8].map((k) => `<line x1="${along(0, 1 + k * 8).join(' ').split(' ')[0]}" y1="${along(0, 1 + k * 8)[1]}" x2="${along(1, 1 + k * 8)[0]}" y2="${along(1, 1 + k * 8)[1]}"/>`).join('')}</g>
-    <polygon points="${[top[0], top[3], bottom[3], bottom[0]].join(' ')}" fill="#121823"/>
-    <polygon points="${top.join(' ')}" fill="url(#sb-cloth)" stroke="#0b0f17" stroke-width="1" filter="url(#paper-tex)"/>
-    <polyline points="${top[3]} ${top[2]}" stroke="#7f8aa3" stroke-width="1.2" opacity="0.7" fill="none"/>
-    <polyline points="${top[0]} ${top[1]}" stroke="#6f7a8c" stroke-width="0.8" opacity="0.4" fill="none"/>
-    <!-- закладки торчат из обреза, как на крупном плане -->
-    <polygon points="${along(0.6, 3)} ${along(0.7, 3)} ${along(0.7, 9).map((v, i) => v + (i ? 3 : -1))} ${along(0.6, 9).map((v, i) => v + (i ? 3 : -1))}" fill="#e8dbb8"/>
-    <polygon points="${along(0.78, 4)} ${along(0.86, 4)} ${along(0.86, 9).map((v, i) => v + (i ? 2 : -1))} ${along(0.78, 9).map((v, i) => v + (i ? 2 : -1))}" fill="#d9c79e"/>
+    <polygon points="${top.join(' ')}" fill="url(#sb-cloth)" stroke="#0e131c" stroke-width="1" filter="url(#paper-tex)"/>
+    <polygon points="${[top[0], top[3], bottom[3], bottom[0]].join(' ')}" fill="#0e131d"/>
+    <polygon points="${top.join(' ')}" fill="url(#sb-lamp)"/>
+    <!-- потёртые углы и закладки, как на крупном плане -->
+    <polyline points="${top[0]} ${top[1]}" stroke="#6f7a8c" stroke-width="1" opacity="0.5" fill="none"/>
+    <polygon points="${B.I(566, 490)} ${B.I(574, 490)} ${B.I(575, 497)} ${B.I(567, 498)}" fill="#e2d3ae"/>
+    <polygon points="${B.I(583, 489)} ${B.I(590, 488)} ${B.I(592, 494)} ${B.I(584, 495)}" fill="#d8c69c"/>
   </g></g>`;
 }
 
