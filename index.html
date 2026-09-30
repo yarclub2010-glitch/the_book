@@ -123,6 +123,7 @@
             <label class="check"><input type="checkbox" id="set-captions"> Субтитры звуков</label>
             <label class="check"><input type="checkbox" id="set-motion"> Движение камеры и тряска</label>
             <label class="check"><input type="checkbox" id="set-big"> Крупный текст</label>
+            <button type="button" class="set-fs" id="set-fs">Во весь экран · F</button>
           </div>
         </div>
       </section>
@@ -153,6 +154,9 @@
             <tr><td>Щелчок, Пробел, Enter</td><td>дальше</td></tr>
             <tr><td>Ctrl (удерживать)</td><td>пропуск</td></tr>
             <tr><td>A</td><td>авточтение</td></tr>
+            <tr><td>1–9</td><td>перейти в место из списка внизу слева</td></tr>
+            <tr><td>F5 / F9</td><td>быстрое сохранение / загрузка</td></tr>
+            <tr><td>F</td><td>во весь экран</td></tr>
             <tr><td>Tab, затем Enter</td><td>выбрать предмет без мыши</td></tr>
             <tr><td>Q</td><td>что дальше — чем сейчас занят герой</td></tr>
             <tr><td>L</td><td>журнал реплик и дневник законов</td></tr>
@@ -160,18 +164,12 @@
             <tr><td>Правый щелчок, колесо вниз</td><td>отойти от предмета</td></tr>
             <tr><td>Esc</td><td>отойти / меню</td></tr>
           </table>
-          <p class="muted">Лучше играть в наушниках: половина подсказок — в звуках. На телефоне — горизонтально.</p>
+          <p class="muted">Лучше играть в наушниках: половина подсказок — в звуках.</p>
         </div>
       </section>
 
       <div class="toast" id="toast" role="status"></div>
     </div>
-  </div>
-  <!-- телефон вертикально: кадр 16:9 превращается в полоску — просим повернуть -->
-  <div class="rotate" aria-hidden="true">
-    <svg viewBox="0 0 64 64" width="72" height="72"><rect x="20" y="8" width="24" height="42" rx="4"/><path d="M14 44 a22 22 0 0 0 30 12"/><path d="M40 52 l4 4 -5 3"/></svg>
-    <p>Поверните телефон</p>
-    <small>Игра идёт в горизонтальном кадре</small>
   </div>
   <script type="module" src="src/main.js"></script>
 </body>

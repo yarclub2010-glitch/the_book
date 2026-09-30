@@ -190,7 +190,29 @@ export class Game {
         else if (this.mode === 'explore' || this.mode === 'beat') this.openPanel('pause');
         return;
       }
+      // F9 — быстрая загрузка (и из главного меню), F — во весь экран
+      if (e.key === 'F9') {
+        e.preventDefault();
+        if (!this.panelOpen()) this.quickLoad();
+        return;
+      }
+      if ((e.key === 'f' || e.key === 'а') && !e.ctrlKey && !e.altKey && !e.metaKey && !this.panelOpen()) {
+        this.toggleFullscreen();
+        return;
+      }
       if (this.panelOpen() || this.game.classList.contains('at-title')) return;
+      // F5 — быстрое сохранение (вместо перезагрузки страницы, пока идёт игра)
+      if (e.key === 'F5') {
+        e.preventDefault();
+        this.quickSave();
+        return;
+      }
+      // 1–9 — перейти в место из панели внизу слева
+      if (/^[1-9]$/.test(e.key) && this.mode === 'explore') {
+        const b = $('#nav').querySelectorAll('button')[+e.key - 1];
+        if (b && !b.hasAttribute('aria-current')) b.click();
+        return;
+      }
       // зона в фокусе (Tab): Enter/пробел — осмотреть её, как щелчком в её середине
       const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest('.hs.active');
       if (focused && (e.key === ' ' || e.key === 'Enter')) {
@@ -287,6 +309,7 @@ export class Game {
       this.settings.motion = e.target.checked;
       this.saveSettings();
     });
+    $('#set-fs').addEventListener('click', () => this.toggleFullscreen());
     $('#set-big').addEventListener('change', (e) => {
       this.settings.bigText = e.target.checked;
       this.saveSettings();
@@ -398,13 +421,13 @@ export class Game {
     $('#saves-title').textContent = mode === 'save' ? 'Сохранить' : 'Загрузить';
     const box = $('#saves-list');
     box.innerHTML = '';
-    for (const key of ['auto', 'slot1', 'slot2', 'slot3']) {
-      if (mode === 'save' && key === 'auto') continue;
+    for (const key of ['auto', 'quick', 'slot1', 'slot2', 'slot3']) {
+      if (mode === 'save' && (key === 'auto' || key === 'quick')) continue;
       const data = store.get(key);
       const btn = document.createElement('button');
       btn.className = 'slot';
       btn.disabled = (mode === 'load' && !data) || (mode === 'save' && !this.state);
-      btn.innerHTML = `<b>${key === 'auto' ? 'Автосохранение' : `Ячейка ${key.slice(-1)}`}</b>
+      btn.innerHTML = `<b>${key === 'auto' ? 'Автосохранение' : key === 'quick' ? 'Быстрое сохранение (F5)' : `Ячейка ${key.slice(-1)}`}</b>
         <span>${data ? `${esc(data.chapterTitle)} · ${esc(data.place)}` : 'Пусто'}</span>
         <small>${data ? `${new Date(data.when).toLocaleString('ru')}${data.preview ? ` — «${esc(data.preview)}»` : ''}` : ''}</small>`;
       btn.addEventListener('click', () => {
@@ -450,6 +473,30 @@ export class Game {
       state: clone(this.state),
       log: this.log.slice(-80),
     };
+  }
+
+  // Быстрое сохранение/загрузка (F5/F9) — отдельная ячейка, без меню
+  quickSave() {
+    if (!this.state || this.mode !== 'explore') {
+      this.toast('Сохранить можно, когда сцена закончилась');
+      return;
+    }
+    store.set('quick', this.snapshot());
+    this.toast('Быстрое сохранение · F9 — вернуться сюда');
+  }
+
+  quickLoad() {
+    const data = store.get('quick');
+    if (!data) {
+      this.toast('Быстрого сохранения пока нет · F5 — сохранить');
+      return;
+    }
+    this.load(data);
+  }
+
+  toggleFullscreen() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
   }
 
   autosave() {
@@ -558,7 +605,7 @@ export class Game {
     const nav = $('#nav');
     // скрытые места (например, экран телефона) не показываются в панели
     const locs = this.chapter ? Object.entries(this.chapter.locations).filter(([, L]) => !L.hidden) : [];
-    nav.innerHTML = locs.map(([id, L]) => `<button type="button" data-loc="${id}"${id === this.state.location ? ' aria-current="true"' : ''}>${esc(L.name)}</button>`).join('');
+    nav.innerHTML = locs.map(([id, L], i) => `<button type="button" data-loc="${id}" title="Клавиша ${i + 1}"${id === this.state.location ? ' aria-current="true"' : ''}>${esc(L.name)}</button>`).join('');
     nav.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => this.go(b.dataset.loc)));
     this.updateCarry();
   }
@@ -909,8 +956,7 @@ export class Game {
         this.thought(a);
         break;
       case 'hint':
-        // на сенсорном экране не щёлкают, а нажимают
-        this.hint(matchMedia('(pointer: coarse)').matches ? a.replace(/^Щёлкайте/, 'Нажимайте') : a);
+        this.hint(a);
         break;
       case 'set':
         Object.assign(this.state.flags, a);
