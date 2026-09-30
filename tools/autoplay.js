@@ -323,12 +323,29 @@ export async function run(game) {
     },
     async ch8x() {
       await start('ch8x', { choice: 'show' });
-      await play();
+      // эпилог руками игрока: сначала ожог двойника, потом фото
+      await click('photo');
+      check(!game.state.flags.readX && game.mode !== 'end', 'ch8x: фото — только после ожога');
+      await click('book');
+      await scene('book-p');
+      await click('pageR');
+      check(game.state.flags.readX, 'ch8x: «Оставайся» прочитано');
+      await go('kitchen', 'kitchen-p-evening');
+      await click('photo');
       await ended('ch8x', 'Обмен');
     },
     async ch8() {
       await start('ch8', { choice: 'hide' });
       await click('solder');
+      // загадка «Фольга»: голым жалом — пятно; трафарет под лупой на его столе
+      await go('kitchen', 'kitchen-p-evening');
+      await click('book');
+      await scene('book-p');
+      await click('pageR');
+      check(!flag('sent') && flag('triedBurn'), 'ch8: без фольги не выжечь');
+      await go('room', 'room-p');
+      await click('lamp');
+      check(flag('hasFoil'), 'ch8: трафарет из фольги под лупой');
       await go('kitchen', 'kitchen-p-evening');
       await click('book');
       await scene('book-p');
@@ -350,6 +367,17 @@ export async function run(game) {
       await start('ch9', legacy);
       await go('room', 'room-np-evening');
       await click('mags');
+      // загадка «Стекло»: фото под стеклом — вынуть Вериной косточкой
+      await go('kitchen', 'kitchen-np-evening');
+      await click('photo');
+      check(flag('sawGlass') && !flag('frameOpen'), 'ch9: фото под стеклом');
+      await go('vera', 'vera-np');
+      await click('desk');
+      check(flag('hasFolder'), 'ch9: Верина косточка');
+      await go('kitchen', 'kitchen-np-evening');
+      await click('photo');
+      check(flag('frameOpen'), 'ch9: фото вынуто из-под стекла');
+      await go('room', 'room-np-evening');
       await click('bed');
       await go('kitchen', 'kitchen-np-morning');
       await minutesTo(38);

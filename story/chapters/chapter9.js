@@ -79,7 +79,7 @@ export default {
     s.flags.ne && 'ne-written',
   ].filter(Boolean),
 
-  carry: (s) => [s.flags.hasPen && !s.flags.ne && 'маркер', s.flags.holding && 'фото с полки'].filter(Boolean).join(', '),
+  carry: (s) => [s.flags.hasPen && !s.flags.ne && 'маркер', s.flags.hasFolder && !s.flags.frameOpen && 'Верина косточка', s.flags.holding && 'фото с полки'].filter(Boolean).join(', '),
 
   end: {
     kicker: 'Концовка',
@@ -99,6 +99,8 @@ export default {
   // «Что дальше?» (Q) — чем герой сейчас занят; направление, а не готовый ответ
   goal(s) {
     const f = s.flags;
+    if (s.time !== 'morning' && f.sawGlass && !f.frameOpen) return f.hasFolder ? 'Отогнуть гвоздики задника Вериной косточкой и вынуть фото из-под стекла.' : 'Фото под стеклом. Задник на гвоздиках — пальцами не отогнуть. Чем Вера отгибала переплёты?';
+    if (s.time !== 'morning' && f.hasPen && !f.sawGlass) return 'Маркер есть. Посмотреть на само фото — как на нём писать.';
     if (s.time !== 'morning') return f.hasPen ? 'Маркер у меня. Лечь спать — будильник на 6:35.' : 'Завтра в 6:40 писать на фото. Нужно, чем писать, — не карандаш. Что-то у меня в комнате.';
     return 'В 6:40 держать фото и написать «Не». Кухонные часы спешат на три минуты.';
   },
@@ -132,10 +134,37 @@ export default {
       if (id === 'bed') return { key: 'am', lines: ['Не сейчас.'] };
     }
     if (scene === 'vera-np' && id === 'door') return { go: 'hall' };
+    if (scene === 'vera-np' && id === 'desk' && f.sawGlass && !f.hasFolder) {
+      return {
+        key: 'folder',
+        set: { hasFolder: true },
+        lines: ['Её костяная косточка для переплётов — гладкая, тонкая, пожелтевшая. Вера отгибала ею всё, что не поддавалось.', 'Прости, Вер. Верну.'],
+      };
+    }
     if (scene === 'vera-np' && id === 'desk') {
       return s.legacy && s.legacy.returnedBrush
         ? { key: 'ch9', lines: ['Её стол. Кисточка лежит там, где я её оставил, — в своём следе в пыли.', 'Хоть что-то в этом доме я вернул на место.'] }
         : { key: 'ch9', lines: ['Её стол. В пыли — тонкий чистый след, а кисточки нет.', 'Она так и лежит у меня в ящике. Я всё собирался вернуть.'] };
+    }
+    // загадка «Стекло»: якорь — само фото, а не стекло над ним (закон 7: доходит целым только на якоре)
+    if (scene.startsWith('kitchen') && id === 'photo' && !f.frameOpen) {
+      if (f.hasFolder) {
+        return {
+          beat: [
+            ['think', 'Переворачиваю рамку. Косточкой — под первый гвоздик, второй, третий. Задник отходит.'],
+            ['sfx', 'page'],
+            ['set', { frameOpen: true }],
+            ['think', 'Фото — без стекла. Шершавое, живое. Теперь писать можно по нему самому.'],
+            ['think', 'Кладу стекло за рамку. На полку — как стояло.'],
+          ],
+        };
+      }
+      return {
+        key: 'glass',
+        shot: 'photo',
+        set: { sawGlass: true },
+        lines: ['Фото под стеклом. Напишу маркером — это будет надпись на стекле, а не на фото.', '«На фото», — написал он. Стекло у нас с ним не общее. Задник держится на гвоздиках — пальцами не отогнуть.'],
+      };
     }
     if (scene.startsWith('kitchen') && morning(s)) {
       if (id === 'clock') return { key: `m${f.min}`, lines: [`На кухонных — ${hhmm(f.min + 3)}.`] };
