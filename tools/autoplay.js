@@ -184,6 +184,28 @@ export async function run(game) {
     },
     async ch4() {
       await start('ch4', {});
+      // загадка «Ответ»: без ответа не уснуть; лимона нет — молоко, спичка, утюг
+      await go('room', 'room-np-evening');
+      await click('bed');
+      check(game.state.time === 'evening', 'ch4: не ответив, спать нельзя');
+      await go('kitchen', 'kitchen-np-evening');
+      await click('sill');
+      await scene('book-np');
+      await click('pageR');
+      await click('pageR');
+      check(flag('readAlt'), 'ch4: в «Опыте №12» нашлось — молоко');
+      await go('kitchen', 'kitchen-np-evening');
+      await click('fridge');
+      await click('cabinet');
+      await go('hall', 'hall-np-evening');
+      await click('hats');
+      check(flag('hasMilk') && flag('hasMatch') && flag('hasIron'), 'ch4: молоко, спички, утюг');
+      await go('kitchen', 'kitchen-np-evening');
+      await click('sill');
+      await scene('book-np');
+      await click('pageR');
+      await click('pageR');
+      check(flag('replied'), 'ch4: «Приду.» проступило ожогом');
       await go('room', 'room-np-evening');
       await click('bed');
       await scene('room-np-morning');

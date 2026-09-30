@@ -35,7 +35,7 @@ export default {
   },
 
   sceneClasses: (s) => [
-    'w-hint-on', 'wp-reply-on', 'wp-m2-on',
+    'w-hint-on', 'wp-reply-on', 'wp-m2-on', 'wp-4r-on',
     s.flags.msg && 'w-p7-on',
     s.flags.uv && 'uv-on',
   ].filter(Boolean),

@@ -36,7 +36,7 @@ export default {
   sceneClasses: (s) => [
     !s.flags.given && 'vera-here',
     s.flags.breadOpen && 'bread-open',
-    'wp-reply-on', 'wp-m2-on',
+    'wp-reply-on', 'wp-m2-on', 'wp-4r-on',
     s.flags.asked && 'w-ask-on',
     s.flags.hint && 'w-hint-on',
   ].filter(Boolean),
