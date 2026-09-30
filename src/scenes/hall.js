@@ -1,10 +1,13 @@
 // Коридор, мир «Не приходи» (H-NP-1): вешалка, валенки, дверь Веры в конце, дверь Тихона справа.
 // И мастерская двойника в мире «Приходи» (R-P-1) — для сценок.
 import * as A from '../engine/art.js';
+import { audio } from '../engine/audio.js';
 
 const H = A.plate('assets/backgrounds/H-NP-1.jpg', 1376, 768);
 const H_OFF = A.plate('assets/backgrounds/H-NP-1-off.jpg', 1376, 768);
 const RP = A.plate('assets/backgrounds/R-P-1.jpg', 1376, 768);
+// тот же коридор в мире «Приходи» (нарисован по H-NP-1, пиксель в пиксель) — для «провала» (скример)
+const H_BLEED = A.plate('assets/backgrounds/H-P-1v2-vera.jpg', 1376, 768);
 
 function buildHall(time) {
   const [x, y] = H.I(905, 172);
@@ -14,6 +17,9 @@ function buildHall(time) {
   // вместе с лампой пропадает и отсвет на стене. Кадр проступает поверх в моменты «провала».
   s += `<g id="hl-sconce"><circle class="flicker" cx="${x}" cy="${y}" r="320" fill="url(#hl-warm)" style="mix-blend-mode:screen"/>`;
   s += `${H_OFF.image(`class="sconce-off bg-${time}"`)}</g>`;
+  // «провал»: темнота и на миг — чужой коридор (событие blackout)
+  s += `<rect class="hl-dark" width="1600" height="900" fill="#020203" opacity="0"/>`;
+  s += H_BLEED.image('class="hl-bleed" opacity="0"');
   return s;
 }
 
@@ -53,7 +59,7 @@ function hall(time) {
     world: 'np',
     title: 'Коридор',
     bg: H.src,
-    extra: [H_OFF.src],
+    extra: [H_OFF.src, H_BLEED.src],
     shots: {
       wide: [0, 0, 1600, 900],
       coats: H.shot(320, 330, 620),
@@ -64,6 +70,28 @@ function hall(time) {
     build: () => buildHall(time),
     hotspots: hallHotspots(),
     events: {
+      // Скример (глава 3): двойник в ту же секунду у своей вешалки — одна точка (закон 6).
+      // Бра дёргается и гаснет, в полной темноте на миг вспыхивает чужой коридор — светлый, с куртками.
+      // Всё на таймерах, а не на CSS-анимации: работает и при «меньше движения».
+      blackout(root) {
+        const off = root.querySelector('.sconce-off');
+        const glow = root.querySelector('#hl-sconce circle.flicker');
+        const dark = root.querySelector('.hl-dark');
+        const bleed = root.querySelector('.hl-bleed');
+        const set = (el, v) => el && (el.style.opacity = v);
+        const lamp = (on) => { set(off, on ? 0 : 1); set(glow, on ? '' : 0); };
+        const steps = [
+          [0, () => lamp(false)], [110, () => lamp(true)], [260, () => lamp(false)], [330, () => lamp(true)],
+          [620, () => { lamp(false); audio.sfx('cold', { caption: 'холод и гул' }); }], [720, () => lamp(true)],
+          [1050, () => { lamp(false); set(dark, 0.6); }], [1500, () => set(dark, 0.96)],
+          [2500, () => { audio.sfx('sting'); set(bleed, 1); set(dark, 0); }],
+          [2680, () => { set(bleed, 0); set(dark, 1); }],
+          [3500, () => { set(dark, 0.5); lamp(true); }], [3600, () => lamp(false)], [3750, () => { lamp(true); set(dark, 0); }],
+        ];
+        steps.forEach(([t, fn]) => setTimeout(fn, t));
+        setTimeout(() => [off, glow, dark, bleed].forEach((el) => el && (el.style.opacity = '')), 4000);
+        return 4000;
+      },
       train(root) {
         const el = root.querySelector('#hl-sconce');
         el.classList.remove('blink-go');
