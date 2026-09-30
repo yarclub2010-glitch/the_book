@@ -9,7 +9,7 @@
 //     <link rel="stylesheet" href="src/ui/ambient.css">
 //
 // Всё рисуется в координатах картинки сцены (plate), как в самих сценах.
-// Анимации выключаются классом .no-motion на #game и prefers-reduced-motion (см. ambient.css).
+// Анимации выключаются только настройкой игры: класс .no-motion на #game (см. ambient.css).
 import * as A from '../engine/art.js';
 
 const n = (v) => Math.round(v * 10) / 10;
@@ -83,8 +83,8 @@ function rain(key, P, rects, { far = 28, near = 8, splats = 8, seed = 1, color =
     return s;
   };
   let s = `${clip}<g clip-path="url(#${id})"><g class="amb-gust" style="--t:${n(6 + r() * 5)}s;animation-delay:${n(-r() * 6)}s">`;
-  s += layer(far, [10, 20], 0.8, [0.1, 0.22], [0.45, 0.7]);
-  s += layer(near, [28, 46], 1.5, [0.14, 0.3], [0.6, 0.95]);
+  s += layer(far, [12, 24], 1, [0.16, 0.32], [0.45, 0.7]);
+  s += layer(near, [30, 52], 1.8, [0.24, 0.44], [0.6, 0.95]);
   s += '</g>';
   // брызги о стекло: капля ударилась — вспыхнула и растеклась
   for (let i = 0; i < splats; i++) {
@@ -204,7 +204,7 @@ const KNP_GLASS = [[88, 12, 340, 575], [392, 112, 530, 488]];
 function kitchenNP(time) {
   const P = IMG.knp;
   // утром стекло сухое — дождь был ночью
-  let s = time === 'morning' ? '' : rain('knp', P, KNP_GLASS, { far: 30, near: 8, splats: 7, seed: 40, color: '#b9c6d8', o: 0.8 }) + drops(P, KNP_GLASS, 12, 41);
+  let s = time === 'morning' ? '' : rain('knp', P, KNP_GLASS, { far: 34, near: 10, splats: 8, seed: 40, color: '#c4d0e0', o: 1 }) + drops(P, KNP_GLASS, 12, 41);
   s += motes(P, [590, 300, 800, 520], 10, 42, '#ffe2a8', 0.5);
   if (time === 'morning') s += steam(P, [786, 512], 43);
   else {

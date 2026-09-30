@@ -1,5 +1,6 @@
 /* «Жизнь» сцен (src/scenes/ambient.js): капли, дождь за стеклом, пыль в свете, пар, мерцание, занавеска.
-   Только transform и opacity. Выключается классом .no-motion на #game и prefers-reduced-motion. */
+   Только transform и opacity. Выключается только настройкой игры (класс .no-motion на #game): системное «меньше движения» часто
+   включено в Windows без ведома игрока — и тогда он не видел бы ни дождя, ни пыли, ни пара. */
 
 .ambient, .ambient * { pointer-events: none; }
 
@@ -160,8 +161,4 @@
 /* тревожные мелочи вне слоя ambient (буквы, записка) — тоже замирают */
 .no-motion .life-letter .mag text, .no-motion .life-note .note-a, .no-motion .life-note .note-b { animation: none !important; }
 
-@media (prefers-reduced-motion: reduce) {
-  .life-letter .mag text, .life-note .note-a, .life-note .note-b { animation: none !important; }
-  .ambient, .ambient * { animation: none !important; }
-  .amb-splat, .amb-streak, .amb-steam, .amb-sheen, .amb-mote, .amb-moth, .amb-car { display: none; }
-}
+

@@ -598,9 +598,8 @@ button { font: inherit; color: inherit; }
 
 button:focus-visible { outline: 0.2cqw solid var(--accent); outline-offset: 0.2cqw; }
 
-@media (prefers-reduced-motion: reduce) {
-  .layer svg, .backdrop-half svg, .grain, .dust, .sway, .seam { animation: none !important; }
-}
+/* анимации сцен и меню выключает только настройка игры «Движение и анимация» */
+.no-motion .layer svg, .no-motion .backdrop-half svg, .no-motion .grain, .no-motion .dust, .no-motion .sway, .no-motion .seam { animation: none !important; }
 
 /* Главное меню: список открытых глав раскрывается под кнопкой «Главы» */
 .chapters { display: none; flex-direction: column; gap: 0.3cqw; margin: -0.2cqw 0 0.4cqw 1.2cqw; }
