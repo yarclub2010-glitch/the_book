@@ -172,11 +172,14 @@ function led(P, [px, py], color, t, lo = 0.15) {
 
 // Предмет на картинке чуть сдвигается сам: копия того же кадра внутри контура предмета
 // (класс cls на сцене запускает одноразовое движение; origin — точка опоры в пикселях картинки)
-function nudge(key, P, poly, [ox, oy], cls) {
+// Копия видна только пока идёт анимация (иначе её край читается как прямоугольная заплатка);
+// filter и extra — тот же свет, что лежит на фоне сцены (фильтр кадра, круг лампы, ночная пелена).
+function nudge(key, P, poly, [ox, oy], cls, { filter = '', extra = '' } = {}) {
   const id = `amb-${key}-${cls}`;
   const [x, y] = P.I(ox, oy);
+  const img = filter ? P.image(`style="filter:${filter}"`) : P.image();
   return `<clipPath id="${id}"><polygon points="${pts(P, poly)}"/></clipPath>`
-    + `<g clip-path="url(#${id})"><g class="amb-nudge ${cls}-part" style="transform-origin:${n(x)}px ${n(y)}px">${P.image()}</g></g>`;
+    + `<g clip-path="url(#${id})"><g class="amb-nudge ${cls}-part" style="transform-origin:${n(x)}px ${n(y)}px">${img}${extra}</g></g>`;
 }
 
 // Тень проходит по стене — будто кто-то прошёл между лампой и стеной
@@ -211,7 +214,13 @@ function kitchenNP(time) {
     s += moth(P, [690, 300], 70, 26, 44);
     s += sweep('knp', P, [560, 0, 1376, 430]);
     // тревога (глава 1): кружка сама чуть поворачивается, по стене проходит тень, свет проседает
-    s += nudge('knp', P, [[752, 505], [832, 505], [832, 590], [752, 590]], [790, 585], 'life-mug');
+    const [lx, ly] = P.I(690, 380);
+    const light = `<circle cx="${n(lx)}" cy="${n(ly)}" r="380" fill="url(#knp-lamp)" style="mix-blend-mode:screen"/>`
+      + (time === 'night' ? '<rect width="1600" height="900" fill="#0a1020" opacity="0.18"/>' : '');
+    s += nudge('knp', P, [[754, 508], [826, 508], [826, 582], [754, 582]], [790, 580], 'life-mug', {
+      filter: time === 'evening' ? 'brightness(1.12) sepia(0.12) saturate(1.05)' : '',
+      extra: light,
+    });
     s += shadowPass('knp', P, [560, 0, 1376, 500]);
     s += dip();
   }

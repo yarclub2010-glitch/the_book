@@ -180,13 +180,14 @@ function buildNP(time) {
   // тёплый круг от лампы на столе
   const lamp = B.I(690, 380);
   s += `<circle class="flicker" cx="${lamp[0]}" cy="${lamp[1]}" r="380" fill="url(#knp-lamp)" style="mix-blend-mode:screen"/>`;
-  s += anchor(B, 'knp-photo', [977, 71, 1044, 145]);
-  s += miri(B);
   s += sillBook(B);
-  // на морозилке: детский рисунок и мамина записка (в главе 2 — другая: мама на смене)
-  // всё бумажное — под свет кухни: ночью лампа тёплая и тусклая, утром светлее
+  // всё, что дорисовано поверх кадра, — под свет кухни: ночью лампа тёплая и тусклая, утром светлее
   const light = time === 'morning' ? 'brightness(0.88) sepia(0.25)' : 'brightness(0.66) sepia(0.45)';
   s += `<g class="np-props" style="filter:${light}">`;
+  // фото-якорь — точно в проём рамки на полке (в кадре там старый портрет), колонка Мири рядом
+  s += anchor(B, 'knp-photo', [984, 77, 1041, 143]);
+  s += miri(B);
+  // на морозилке: детский рисунок и мамина записка (в главе 2 — другая: мама на смене)
   s += drawing(B);
   s += `<g class="note-a">${paper(B, [1128, 262, 96, 66], 3, '#efe6c8', ['Суп в кастрюле.', 'Я у тёти Гали,', 'буду в 9. Мама'], 13)}</g>`;
   s += `<g class="note-b">${paper(B, [1128, 262, 96, 66], -2, '#efe6c8', ['Я на смене', 'до утра. Ужин', 'в холодильнике.'], 12)}</g>`;
@@ -317,16 +318,19 @@ function buildP(withTwin) {
   let s = commonDefs('p') + (withTwin ? BG.pt : BG.p).image('class="bg"');
   // всё, что лежит поверх картинки; ночью (кадр с двойником) — приглушено под свет сцены
   let o = '';
-  o += anchor(B, 'kp-photo', [977, 71, 1044, 145]);
-  o += paper(B, [1140, 250, 88, 50], -3, '#fbf3ee', ['Купи хлеб!!', '— В.'], 13, '#5a2a6a');
+  // ночью перед полкой и холодильником стоит двойник: всё, что за ним, — под маской его силуэта
+  // (вычислена из того же кадра без него)
+  const mask = B.image('').replace(B.src, 'assets/backgrounds/K-P-1v2-twin-mask.png');
+  if (withTwin) o += `<defs><mask id="kpt-boy" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="900">${mask}</mask></defs>`;
+  const behind = (x) => (withTwin ? `<g mask="url(#kpt-boy)">${x}</g>` : x);
+  o += behind(anchor(B, 'kp-photo', [977, 71, 1044, 145]));
+  o += behind(paper(B, [1140, 250, 88, 50], -3, '#fbf3ee', ['Купи хлеб!!', '— В.'], 13, '#5a2a6a'));
   // Верина книга на подоконнике — лежит здесь шесть лет, страницы вздулись
   o += `<g class="sill-book-p">${sillBook(B, true)}</g>`;
   if (!withTwin) o += letters('pw');
   else {
     // ночью у холодильника двойник: буквы видны везде, кроме места, где он заслоняет дверцу
     // (маска — его силуэт, вычислен из того же кадра без него). До «УХОДИ» — вразнобой, после — ряд.
-    const mask = B.image('').replace(B.src, 'assets/backgrounds/K-P-1v2-twin-mask.png');
-    o += `<defs><mask id="kpt-boy" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="900">${mask}</mask></defs>`;
     o += `<g mask="url(#kpt-boy)"><g class="pw-home">${letters('pw', false)}</g><g class="pw-row">${letters('pw')}</g></g>`;
   }
   return s + (withTwin ? `<g style="filter:brightness(0.5) saturate(0.7) hue-rotate(20deg)">${o}</g>` : o);
