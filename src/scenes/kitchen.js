@@ -219,11 +219,11 @@ function miri(B) {
 // глубина доски тут ≈ 50 px; книга — на ~60 % глубины, чуть отступив от рамы.
 // Углы в пикселях кадра (K-NP-1 / K-P-1v2 — пиксель в пиксель): задний левый, задний правый,
 // передний правый, передний левый. Видны верх, передний обрез (страницы) и левый торец.
-const SILL_BOOK_AT = [[468, 519], [548, 484], [542, 512], [462, 547]];
+const SILL_BOOK_AT = [[472, 521], [540, 491], [564, 505], [496, 535]];
 function sillBook(B, swollen = false) {
   const P4 = (dy) => SILL_BOOK_AT.map(([x, y]) => B.I(x, y + dy));
   const top = P4(0);
-  const bottom = P4(swollen ? 9 : 7);
+  const bottom = P4(swollen ? 9 : 10);
   const side = [top[3], top[2], bottom[2], bottom[3]].join(' ');
   // точка на переднем обрезе: t — доля от левого угла к правому
   const along = (t, dy = 0) => {
@@ -231,10 +231,10 @@ function sillBook(B, swollen = false) {
     return B.I(x3 + (x2 - x3) * t, y3 + (y2 - y3) * t + dy);
   };
   // тень вытянута вдоль доски (наклон доски ≈ −24°)
-  const [sx, sy] = B.I(505, 522);
+  const [sx, sy] = B.I(520, 522);
   const shadow = (fill, op, extra = '') => `<ellipse cx="${sx}" cy="${sy}" rx="${52 * B.k}" ry="${12 * B.k}" fill="${fill}" opacity="${op}" transform="rotate(-24 ${sx} ${sy})" ${extra}/>`;
   // книгу сдвинули в другом мире (класс book-shifted) — у нас она тоже съехала и повёрнута
-  const [px, py] = B.I(505, 515);
+  const [px, py] = B.I(518, 513);
   if (swollen) {
     // мир П: тот же том, но бирюзовый переплёт и вздувшийся от воды блок страниц (обрез волной)
     const wave = `M${along(0, 4)} Q${along(0.25, 7)} ${along(0.5, 4)} T${along(1, 4)}`;
@@ -245,21 +245,22 @@ function sillBook(B, swollen = false) {
       <polygon points="${top.join(' ')}" fill="#3f8f98" stroke="#1d3c48" stroke-width="1.4"/>
       <polygon points="${top.join(' ')}" fill="#ffc1d8" opacity="0.18"/>`;
   }
+  // мир НП — как на крупном плане (I-SILL-NP-2-book): тёмно-синий переплёт, толстый кремовый обрез,
+  // из обреза торчат закладки; справа — отсвет лампы, по переднему краю — светлая кромка
   return `<g class="sill-book"><g class="sill-book-pose" style="transform-origin:${px.toFixed(0)}px ${py.toFixed(0)}px">
-    <defs><linearGradient id="sb-cloth" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2d3646"/><stop offset="0.55" stop-color="#232a37"/><stop offset="1" stop-color="#151a22"/></linearGradient>
-    <linearGradient id="sb-lamp" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffb96b" stop-opacity="0"/><stop offset="1" stop-color="#ffb96b" stop-opacity="0.22"/></linearGradient>
-    <linearGradient id="sb-pages" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2d0" stop-opacity="0.35"/><stop offset="1" stop-color="#3a2a14" stop-opacity="0.35"/></linearGradient>
+    <defs><linearGradient id="sb-cloth" x1="0" y1="0" x2="1" y2="0.4"><stop offset="0" stop-color="#1c2331"/><stop offset="0.6" stop-color="#2a3446"/><stop offset="1" stop-color="#46506a"/></linearGradient>
+    <linearGradient id="sb-pages" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b9a47a"/><stop offset="1" stop-color="#e6d6ae"/></linearGradient>
     <filter id="sb-blur"><feGaussianBlur stdDeviation="4"/></filter></defs>
     ${shadow('#000', 0.55, 'filter="url(#sb-blur)"')}
-    <polygon points="${side}" fill="#b9a883"/>
     <polygon points="${side}" fill="url(#sb-pages)"/>
-    <polygon points="${top.join(' ')}" fill="url(#sb-cloth)" stroke="#0e131c" stroke-width="1" filter="url(#paper-tex)"/>
-    <polygon points="${[top[0], top[3], bottom[3], bottom[0]].join(' ')}" fill="#0e131d"/>
-    <polygon points="${top.join(' ')}" fill="url(#sb-lamp)"/>
-    <!-- потёртые углы и закладки, как на крупном плане -->
-    <polyline points="${top[0]} ${top[1]}" stroke="#6f7a8c" stroke-width="1" opacity="0.5" fill="none"/>
-    <polygon points="${along(0.62, -1)} ${along(0.69, -1)} ${along(0.69, 10)} ${along(0.62, 10)}" fill="#e2d3ae"/>
-    <polygon points="${along(0.8, -1)} ${along(0.86, -1)} ${along(0.86, 9)} ${along(0.8, 9)}" fill="#d8c69c"/>
+    <g stroke="#9c875e" stroke-width="0.6" opacity="0.6">${[0.3, 0.55, 0.8].map((k) => `<line x1="${along(0, 1 + k * 8).join(' ').split(' ')[0]}" y1="${along(0, 1 + k * 8)[1]}" x2="${along(1, 1 + k * 8)[0]}" y2="${along(1, 1 + k * 8)[1]}"/>`).join('')}</g>
+    <polygon points="${[top[0], top[3], bottom[3], bottom[0]].join(' ')}" fill="#121823"/>
+    <polygon points="${top.join(' ')}" fill="url(#sb-cloth)" stroke="#0b0f17" stroke-width="1" filter="url(#paper-tex)"/>
+    <polyline points="${top[3]} ${top[2]}" stroke="#7f8aa3" stroke-width="1.2" opacity="0.7" fill="none"/>
+    <polyline points="${top[0]} ${top[1]}" stroke="#6f7a8c" stroke-width="0.8" opacity="0.4" fill="none"/>
+    <!-- закладки торчат из обреза, как на крупном плане -->
+    <polygon points="${along(0.6, 3)} ${along(0.7, 3)} ${along(0.7, 9).map((v, i) => v + (i ? 3 : -1))} ${along(0.6, 9).map((v, i) => v + (i ? 3 : -1))}" fill="#e8dbb8"/>
+    <polygon points="${along(0.78, 4)} ${along(0.86, 4)} ${along(0.86, 9).map((v, i) => v + (i ? 2 : -1))} ${along(0.78, 9).map((v, i) => v + (i ? 2 : -1))}" fill="#d9c79e"/>
   </g></g>`;
 }
 

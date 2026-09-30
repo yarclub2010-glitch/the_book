@@ -145,7 +145,7 @@ button { font: inherit; color: inherit; }
 .bg-book-shifted { display: none; }
 .book-on-sill.book-shifted .bg-book { display: none; }
 .book-on-sill.book-shifted .bg-book-shifted { display: inline; }
-.book-shifted .sill-book-pose { transform: translate(10px, 1px) rotate(-9deg); }
+.book-shifted .sill-book-pose { transform: translate(9px, -4px) rotate(-3deg); }
 .book-taken .bg-nobook { display: inline; }
 /* УФ-лампа Веры включена (позже по сюжету) */
 .bg-uv { display: none !important; }
