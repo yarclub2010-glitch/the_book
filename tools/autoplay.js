@@ -224,6 +224,12 @@ export async function run(game) {
     },
     async ch5() {
       await start('ch5', {});
+      // обход закрыт: без ответа двойника хлебницу не открыть
+      await go('kitchen', 'kitchen-p-evening');
+      await click('sink');
+      await scene('bread-p');
+      await click('breadbox');
+      check(!flag('hasHeadphones'), 'ch5: без ответа двойника по хлебнице не шарят');
       // загадка «Спросить двойника»: без паяльника вопрос не написать
       await go('kitchen', 'kitchen-p-evening');
       await click('book');
@@ -257,6 +263,12 @@ export async function run(game) {
     },
     async ch6() {
       await start('ch6', {});
+      // обход закрыт: до ноутбука «последний трек» не предложен
+      {
+        let offered = null;
+        await click('miri', (t) => { offered = t.some((x) => x.includes('последний трек')); return 0; });
+        check(offered === false, 'ch6: до ноутбука «последний трек» не угадать');
+      }
       // загадка «Пароль»: без даты ноутбук не открыть
       await go('room', 'room-np-morning');
       await click('laptop');
@@ -280,6 +292,10 @@ export async function run(game) {
     },
     async ch7(choice) {
       await start('ch7', {});
+      // обход закрыт: без послания двойника Верину лампу не берут
+      await go('vera', 'vera-p');
+      await click('naillamp');
+      check(!flag('hasLamp'), 'ch7: без послания лампу не берут');
       await go('hall', 'hall-p');
       await fire('msg');
       await go('kitchen', 'kitchen-p-evening');

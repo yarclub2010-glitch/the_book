@@ -124,6 +124,7 @@ export default {
 
     if (scene === 'vera-p') {
       if (id === 'naillamp') {
+        if (!f.hasLamp && !f.readMsg) return { key: 'nolamp', lines: ['Маленькая белая лампа-купол. Вера сушит под ней лак. Не трогаю — не моё.'] };
         if (!f.hasLamp) return { key: 'take', set: { hasLamp: true }, lines: ['Белая лампа-купол, внутри — ряд синеватых диодов. Вера сушит под ней лак.', 'Вера на работе. Возьму на минутку. Верну — она и не заметит.'] };
         return { key: 'taken', lines: ['На столе — светлый круг, где стояла лампа. Вернуть до девяти.'] };
       }
@@ -131,7 +132,7 @@ export default {
 
     if (scene === 'note-p' && id === 'note') {
       if (f.uv) return { key: 'uv', lines: ['«Не приходи провожать». Тёмным по светящейся бумаге.'] };
-      if (f.hasLamp) {
+      if (f.hasLamp && f.readMsg) {
         return {
           beat: [
             ['think', 'Ставлю лампу над листом. Щелчок.'],
