@@ -374,6 +374,32 @@ export async function run(game) {
     ['ch9 → Мост', () => chapters.ch9({ stayedCold: true, sentTrack: true, choice: 'hide' }, 'Отпустить', 'Мост')],
     ['ch9 → Слияние', () => chapters.ch9({ stayedCold: true, returnedBrush: true, sentTrack: true, choice: 'hide' }, 'Держать', 'Слияние')],
   ];
+  // Двери: «его дверь» ведёт в его комнату, дверь Веры изнутри — в коридор, проход — на кухню;
+  // любая зона-дверь хотя бы что-то отвечает (иначе щелчок уходит в пустоту)
+  {
+    const { scenes } = await import('../src/scenes/index.js');
+    const bad = [];
+    const defs = await Promise.all(['1', '2', '3', '4', '5', '6', '7', '8', '8x', '9'].map((n) => import(`../story/chapters/chapter${n}.js`).then((m) => m.default)));
+    for (const ch of defs) {
+      for (const time of ['night', 'evening', 'morning']) {
+        for (const [lid, L] of Object.entries(ch.locations)) {
+          if (L.hidden) continue;
+          const st = { time, flags: {}, location: lid, legacy: {}, fired: {}, elapsed: {}, due: {}, looked: {}, puzzles: {} };
+          const sid = L.scene(st);
+          const sc = scenes[sid];
+          for (const h of (sc && sc.hotspots) || []) {
+            const must = (h.id === 'mine' && ch.locations.room) || (h.id === 'door' && sid.startsWith('vera') && ch.locations.hall) || h.id === 'corridor';
+            if (!must && !['vera', 'door', 'doorway'].includes(h.id)) continue;
+            const res = (ch.interact && ch.interact(sid, h.id, st)) || null;
+            const goes = res && (res.go || res.beat);
+            const says = goes || (res && res.lines && res.lines.length) || (h.lines && h.lines.length);
+            if ((must && !goes) || !says) bad.push(`${ch.id}/${sid}/${h.id}`);
+          }
+        }
+      }
+    }
+    check(bad.length === 0, `двери: все ведут куда надо${bad.length ? ` — нет: ${[...new Set(bad)].join(', ')}` : ''}`);
+  }
   // ?autoplay=ch5 — прогнать только главы, чьё имя начинается так (для быстрой проверки одной главы)
   const only = new URLSearchParams(location.search).get('autoplay');
   for (const [name, fn] of steps) {

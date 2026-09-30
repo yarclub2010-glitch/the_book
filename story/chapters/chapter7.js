@@ -72,6 +72,7 @@ export default {
 
     if (scene === 'hall-p') {
       if (id === 'corridor') return { go: 'kitchen' };
+      if (id === 'mine') return { go: 'room' };
       if (id === 'vera') return { go: 'vera' };
     }
     if (scene === 'kitchen-p-evening') {

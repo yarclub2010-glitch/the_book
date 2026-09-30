@@ -61,18 +61,37 @@ function drops(P, rects, count, seed, anime = false) {
   return s;
 }
 
-// Дождь за стеклом (мир П): тонкие косые штрихи, обрезанные рамой стекла
-function streaks(key, P, rects, count, seed) {
+// Дождь за окном: два слоя косых струй (дальний — частый и тонкий, ближний — редкий и длинный),
+// порывы (весь дождь то густеет, то стихает) и брызги капель о стекло. Всё обрезано рамой стекла.
+// rects — стёкла в пикселях картинки; o — насколько заметен (ночью в НП дождь едва виден в темноте)
+function rain(key, P, rects, { far = 28, near = 8, splats = 8, seed = 1, color = '#e4eaff', o = 1, slant = 0.14 } = {}) {
   const r = A.rng(seed);
-  const id = `amb-${key}-rain`;
-  let s = `<clipPath id="${id}">${rects.map(([x0, y0, x1, y1]) => `<polygon points="${pts(P, [[x0, y0], [x1, y0], [x1, y1], [x0, y1]])}"/>`).join('')}</clipPath><g clip-path="url(#${id})">`;
-  for (let i = 0; i < count; i++) {
+  const id = `amb-${key}-rain2`;
+  const clip = `<clipPath id="${id}">${rects.map(([x0, y0, x1, y1]) => `<polygon points="${pts(P, [[x0, y0], [x1, y0], [x1, y1], [x0, y1]])}"/>`).join('')}</clipPath>`;
+  const layer = (count, [la, lb], w, [oa, ob], [ta, tb]) => {
+    let s = '';
+    for (let i = 0; i < count; i++) {
+      const [x0, y0, x1, y1] = rects[i % rects.length];
+      const len = (la + r() * (lb - la)) * P.k;
+      const h = (y1 - y0) * P.k;
+      // старт левее/правее, чтобы косая струя пересекала всё стекло
+      const [x, y] = P.I(x0 + r() * (x1 - x0) + (y1 - y0) * slant * 0.5, y0);
+      const d = h + len * 2;
+      const t = ta + r() * (tb - ta);
+      s += `<line class="amb-streak" x1="${n(x + len * slant)}" y1="${n(y - len * 2)}" x2="${n(x)}" y2="${n(y - len)}" stroke="${color}" stroke-width="${n(w)}" stroke-linecap="round" opacity="${n((oa + r() * (ob - oa)) * o)}" style="--d:${n(d)}px;--sx:${n(-d * slant)}px;--t:${n(t)}s;animation-delay:${n(-r() * t)}s"/>`;
+    }
+    return s;
+  };
+  let s = `${clip}<g clip-path="url(#${id})"><g class="amb-gust" style="--t:${n(6 + r() * 5)}s;animation-delay:${n(-r() * 6)}s">`;
+  s += layer(far, [10, 20], 0.8, [0.1, 0.22], [0.45, 0.7]);
+  s += layer(near, [28, 46], 1.5, [0.14, 0.3], [0.6, 0.95]);
+  s += '</g>';
+  // брызги о стекло: капля ударилась — вспыхнула и растеклась
+  for (let i = 0; i < splats; i++) {
     const [x0, y0, x1, y1] = rects[i % rects.length];
-    const len = (18 + r() * 18) * P.k;
-    const [x, y] = P.I(x0 + r() * (x1 - x0 + 20), y0);
-    const d = (y1 - y0) * P.k + len;
-    const t = 0.7 + r() * 0.5;
-    s += `<line class="amb-streak" x1="${n(x + len * 0.08)}" y1="${n(y - len)}" x2="${n(x)}" y2="${n(y)}" stroke="#e4eaff" stroke-width="1.1" stroke-linecap="round" opacity="${n(0.16 + r() * 0.16)}" style="--d:${n(d)}px;--sx:${n(-d * 0.08)}px;--t:${n(t)}s;animation-delay:${n(-r() * t)}s"/>`;
+    const [x, y] = P.I(x0 + 6 + r() * (x1 - x0 - 12), y0 + 6 + r() * (y1 - y0 - 12));
+    const t = 2.2 + r() * 3.5;
+    s += `<circle class="amb-splat" cx="${n(x)}" cy="${n(y)}" r="${n((1.4 + r() * 1.4) * P.k)}" fill="none" stroke="${color}" stroke-width="0.9" opacity="0" style="--o:${n(0.55 * o)};--t:${n(t)}s;animation-delay:${n(-r() * t)}s"/>`;
   }
   return s + '</g>';
 }
@@ -185,7 +204,7 @@ const KNP_GLASS = [[88, 12, 340, 575], [392, 112, 530, 488]];
 function kitchenNP(time) {
   const P = IMG.knp;
   // утром стекло сухое — дождь был ночью
-  let s = time === 'morning' ? '' : drops(P, KNP_GLASS, 12, 41);
+  let s = time === 'morning' ? '' : rain('knp', P, KNP_GLASS, { far: 30, near: 8, splats: 7, seed: 40, color: '#b9c6d8', o: 0.8 }) + drops(P, KNP_GLASS, 12, 41);
   s += motes(P, [590, 300, 800, 520], 10, 42, '#ffe2a8', 0.5);
   if (time === 'morning') s += steam(P, [786, 512], 43);
   else {
@@ -202,7 +221,7 @@ function kitchenNP(time) {
 // Кухня П (K-P-1v2 — та же кухня, что в НП): дождь за стеклом и капли, над тремя кружками пар
 const KP_GLASS = [[100, 20, 345, 590], [400, 110, 530, 505], [400, 5, 520, 70]];
 function kitchenP(key, P, evening) {
-  let s = streaks(key, P, KP_GLASS, 14, 51);
+  let s = rain(key, P, KP_GLASS, { far: 34, near: 10, splats: 9, seed: 51 });
   s += drops(P, KP_GLASS, 9, 52, true);
   if (evening) {
     // закатное пятно на стене у холодильника тихо «дышит»
@@ -230,15 +249,16 @@ const BUILD = {
   },
 
   // Хлебница (K-P-3): капли на окне справа
-  'bread-p': () => drops(IMG.bread, [[1198, 4, 1372, 388]], 7, 71, true),
+  'bread-p': () => rain('brp', IMG.bread, [[1198, 4, 1372, 388]], { far: 10, near: 3, splats: 3, seed: 70 }) + drops(IMG.bread, [[1198, 4, 1372, 388]], 7, 71, true),
 
   // Подоконник крупно (I-SILL-NP-2): капли по стеклу за подоконником
-  'sill-np': () => drops(IMG.sill, [[6, 6, 168, 305], [322, 8, 838, 268], [976, 8, 1236, 192]], 10, 81),
+  'sill-np': () => rain('snp', IMG.sill, [[6, 6, 168, 305], [322, 8, 838, 268], [976, 8, 1236, 192]], { far: 26, near: 7, splats: 6, seed: 80, color: '#c9d3e0', o: 0.8 })
+    + drops(IMG.sill, [[6, 6, 168, 305], [322, 8, 838, 268], [976, 8, 1236, 192]], 10, 81),
 
   // Книга НП (I-BOOK-NP-2): капли на стекле за книгой
-  'book-np': () => drops(IMG.bnp, [[4, 6, 160, 310], [322, 4, 850, 125]], 7, 91),
+  'book-np': () => rain('bnp', IMG.bnp, [[4, 6, 160, 310], [322, 4, 850, 125]], { far: 16, near: 4, splats: 4, seed: 90, color: '#c9d3e0', o: 0.7 }) + drops(IMG.bnp, [[4, 6, 160, 310], [322, 4, 850, 125]], 7, 91),
   // Книга П (I-BOOK-P): капли на стекле над книгой
-  'book-p': () => drops(IMG.bp, [[95, 2, 1250, 88]], 8, 92, true),
+  'book-p': () => rain('bp', IMG.bp, [[95, 2, 1250, 88]], { far: 20, near: 5, splats: 5, seed: 93 }) + drops(IMG.bp, [[95, 2, 1250, 88]], 8, 92, true),
 
   // Записка (I-NOTE-P / -UV): только в ультрафиолете — лампа дрожит, по бумаге пробегает отсвет
   'note-p': () => {
@@ -298,7 +318,7 @@ const BUILD = {
     const leds = led(P, [1068, 42], '#7dff9a', 3.1) + led(P, [1236, 30], '#ff5a5a', 1.7, 0.4) + led(P, [1182, 44], '#ffc861', 5.3) + led(P, [508, 492], '#ff6a4a', 2.3, 0.5);
     const radio = `<g class="amb-radio">${glow('rp-radio', P, [775, 470], 34, '#ffb060', 0.25, 0.5, 5)}</g>`;
     const puff = `<g class="amb-puff">${steam(P, [488, 440], 145).replace(/#f3e9d8/g, '#f1ecfa')}</g>`;
-    return streaks('rp', P, glass, 10, 141) + drops(P, glass, 6, 142, true) + steam(P, [488, 440], 143).replace(/#f3e9d8/g, '#e9e2f4')
+    return rain('rp', P, glass, { far: 18, near: 5, splats: 5, seed: 140 }) + drops(P, glass, 6, 142, true) + steam(P, [488, 440], 143).replace(/#f3e9d8/g, '#e9e2f4')
       + glow('rp-lens', P, [265, 445], 80, '#fff2c8', 0.18, 0.34, 6) + leds + radio + puff;
   },
 
@@ -312,7 +332,7 @@ const BUILD = {
   'vera-p': () => {
     const P = IMG.vp;
     const panes = [[722, 72, 850, 385], [870, 58, 1028, 388], [1053, 42, 1230, 390]];
-    return streaks('vp', P, panes, 16, 171) + drops(P, panes, 10, 172, true)
+    return rain('vp', P, panes, { far: 36, near: 10, splats: 9, seed: 170 }) + drops(P, panes, 10, 172, true)
       + glow('vp-nail', P, [1203, 470], 60, '#8fa2ff', 0.2, 0.45, 5)
       + motes(P, [1060, 320, 1230, 460], 8, 173, '#ffe6b0', 0.5)
       + motes(P, [620, 360, 720, 470], 6, 174, '#ffd9a0', 0.5);

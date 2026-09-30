@@ -143,7 +143,7 @@ export default {
       if (id === 'note') {
         return {
           key: 'shift',
-          view: 'assets/items/I-CALENDAR.jpg',
+          view: 'assets/items/I-CALENDAR-2.jpg',
           lines: ['«Я на смене до утра. Ужин в холодильнике». Мама.', 'В календаре у холодильника ночные смены обведены красным: 14-е, 17-е, 20-е. И сегодня.'],
         };
       }

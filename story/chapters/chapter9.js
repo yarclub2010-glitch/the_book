@@ -131,6 +131,7 @@ export default {
       }
       if (id === 'bed') return { key: 'am', lines: ['Не сейчас.'] };
     }
+    if (scene === 'vera-np' && id === 'door') return { go: 'hall' };
     if (scene === 'vera-np' && id === 'desk') {
       return s.legacy && s.legacy.returnedBrush
         ? { key: 'ch9', lines: ['Её стол. Кисточка лежит там, где я её оставил, — в своём следе в пыли.', 'Хоть что-то в этом доме я вернул на место.'] }

@@ -82,6 +82,7 @@ export default {
     // ---------- коридор ----------
     if (scene === 'hall-p') {
       if (id === 'corridor') return { go: 'kitchen' };
+      if (id === 'mine') return { go: 'room' };
       if (id === 'vera') {
         if (f.given) return { key: 'after', lines: ['Её дверь приоткрыта. Она напевает под нос — шесть нот. Я их откуда-то знаю.'] };
         if (f.hasHeadphones) {

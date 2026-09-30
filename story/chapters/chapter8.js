@@ -80,7 +80,9 @@ export default {
 
     if (scene === 'hall-p') {
       if (id === 'corridor') return { go: 'kitchen' };
+      if (id === 'mine') return { go: 'room' };
       if (id === 'vera' && !morning(s)) return { key: 'eve', lines: ['«Ты чего такой тихий весь вечер?» — Вера смотрит из дверей.', 'Я молчу. Это не мой разговор.'] };
+      if (id === 'vera') return { key: 'am', lines: ['Её дверь прикрыта. Спит. Сегодня с ней поговорит тот, чей это разговор.'] };
     }
     if (scene === 'kitchen-p-evening') {
       if (id === 'book') return { go: 'book' };

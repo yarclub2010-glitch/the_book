@@ -214,20 +214,34 @@ function miri(B) {
 }
 
 // Верина книга на подоконнике (глава 2: Тихон кладёт её туда сам)
+// Лежит плашмя на доске подоконника и повторяет её перспективу: доска уходит вправо-вверх
+// (задний край у рамы: (420,536)→(550,479), передний: (480,560)→(636,483) — наклон ≈ −0.45),
+// глубина доски тут ≈ 50 px; книга — на ~60 % глубины, чуть отступив от рамы.
+// Углы в пикселях кадра (K-NP-1 / K-P-1v2 — пиксель в пиксель): задний левый, задний правый,
+// передний правый, передний левый. Видны верх, передний обрез (страницы) и левый торец.
+const SILL_BOOK_AT = [[468, 519], [548, 484], [542, 512], [462, 547]];
 function sillBook(B, swollen = false) {
-  const P4 = (dy) => [B.I(502, 477 + dy), B.I(590, 473 + dy), B.I(603, 487 + dy), B.I(510, 492 + dy)];
+  const P4 = (dy) => SILL_BOOK_AT.map(([x, y]) => B.I(x, y + dy));
   const top = P4(0);
-  const bottom = P4(6);
+  const bottom = P4(swollen ? 9 : 7);
   const side = [top[3], top[2], bottom[2], bottom[3]].join(' ');
-  const [sx, sy] = B.I(556, 494);
+  // точка на переднем обрезе: t — доля от левого угла к правому
+  const along = (t, dy = 0) => {
+    const [[x3, y3], [x2, y2]] = [SILL_BOOK_AT[3], SILL_BOOK_AT[2]];
+    return B.I(x3 + (x2 - x3) * t, y3 + (y2 - y3) * t + dy);
+  };
+  // тень вытянута вдоль доски (наклон доски ≈ −24°)
+  const [sx, sy] = B.I(505, 522);
+  const shadow = (fill, op, extra = '') => `<ellipse cx="${sx}" cy="${sy}" rx="${52 * B.k}" ry="${12 * B.k}" fill="${fill}" opacity="${op}" transform="rotate(-24 ${sx} ${sy})" ${extra}/>`;
   // книгу сдвинули в другом мире (класс book-shifted) — у нас она тоже съехала и повёрнута
-  const [px, py] = B.I(552, 484);
+  const [px, py] = B.I(505, 515);
   if (swollen) {
-    // мир П: тот же том, но бирюзовый переплёт и вздувшийся от воды блок страниц
-    const pg = P4(9);
-    return `<ellipse cx="${sx}" cy="${sy + 3}" rx="${62 * B.k}" ry="${7 * B.k}" fill="#2a1030" opacity="0.35"/>
-      <polygon points="${[top[3], top[2], pg[2], pg[3]].join(' ')}" fill="#f1e2cf"/>
-      <path d="M${top[3]} Q${B.I(530, 497)} ${B.I(556, 494)} T${top[2]}" fill="none" stroke="#b9a18a" stroke-width="1.4"/>
+    // мир П: тот же том, но бирюзовый переплёт и вздувшийся от воды блок страниц (обрез волной)
+    const wave = `M${along(0, 4)} Q${along(0.25, 7)} ${along(0.5, 4)} T${along(1, 4)}`;
+    return `${shadow('#2a1030', 0.35)}
+      <polygon points="${side}" fill="#f1e2cf"/>
+      <path d="${wave}" fill="none" stroke="#b9a18a" stroke-width="1.4"/>
+      <polygon points="${[top[0], top[3], bottom[3], bottom[0]].join(' ')}" fill="#1d3c48"/>
       <polygon points="${top.join(' ')}" fill="#3f8f98" stroke="#1d3c48" stroke-width="1.4"/>
       <polygon points="${top.join(' ')}" fill="#ffc1d8" opacity="0.18"/>`;
   }
@@ -236,7 +250,7 @@ function sillBook(B, swollen = false) {
     <linearGradient id="sb-lamp" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffb96b" stop-opacity="0"/><stop offset="1" stop-color="#ffb96b" stop-opacity="0.22"/></linearGradient>
     <linearGradient id="sb-pages" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2d0" stop-opacity="0.35"/><stop offset="1" stop-color="#3a2a14" stop-opacity="0.35"/></linearGradient>
     <filter id="sb-blur"><feGaussianBlur stdDeviation="4"/></filter></defs>
-    <ellipse cx="${sx}" cy="${sy}" rx="${62 * B.k}" ry="${7 * B.k}" fill="#000" opacity="0.55" filter="url(#sb-blur)"/>
+    ${shadow('#000', 0.55, 'filter="url(#sb-blur)"')}
     <polygon points="${side}" fill="#b9a883"/>
     <polygon points="${side}" fill="url(#sb-pages)"/>
     <polygon points="${top.join(' ')}" fill="url(#sb-cloth)" stroke="#0e131c" stroke-width="1" filter="url(#paper-tex)"/>
@@ -244,8 +258,8 @@ function sillBook(B, swollen = false) {
     <polygon points="${top.join(' ')}" fill="url(#sb-lamp)"/>
     <!-- потёртые углы и закладки, как на крупном плане -->
     <polyline points="${top[0]} ${top[1]}" stroke="#6f7a8c" stroke-width="1" opacity="0.5" fill="none"/>
-    <polygon points="${B.I(566, 490)} ${B.I(574, 490)} ${B.I(575, 497)} ${B.I(567, 498)}" fill="#e2d3ae"/>
-    <polygon points="${B.I(583, 489)} ${B.I(590, 488)} ${B.I(592, 494)} ${B.I(584, 495)}" fill="#d8c69c"/>
+    <polygon points="${along(0.62, -1)} ${along(0.69, -1)} ${along(0.69, 10)} ${along(0.62, 10)}" fill="#e2d3ae"/>
+    <polygon points="${along(0.8, -1)} ${along(0.86, -1)} ${along(0.86, 9)} ${along(0.8, 9)}" fill="#d8c69c"/>
   </g></g>`;
 }
 
