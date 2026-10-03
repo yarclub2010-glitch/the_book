@@ -6,6 +6,9 @@ import * as A from '../engine/art.js';
 const VP = A.plate('assets/backgrounds/V-P-1v2.jpg', 1376, 768);
 const BREAD = A.plate('assets/backgrounds/K-P-3.jpg', 1376, 768);
 const BREAD_OPEN = A.plate('assets/backgrounds/K-P-3-open.jpg', 1376, 768);
+// те же кадры без взятого предмета (пиксель в пиксель): хлебница без наушников, стол Веры без лампы для ногтей
+const BREAD_EMPTY = A.plate('assets/backgrounds/K-P-3-open-empty.jpg', 1376, 768);
+const VP_NOLAMP = A.plate('assets/backgrounds/V-P-1v2-nolamp.jpg', 1376, 768);
 
 // Зоны — те же, что у комнаты в НП; сверху — мелкие предметы (позже в списке — выше)
 export const VERA_P_ZONES = {
@@ -49,7 +52,9 @@ export const veraP = {
     window: VP.shot(970, 230, 620),
   },
   ambience: ['rain'],
-  build: () => VP.image('class="bg"'),
+  extra: [VP_NOLAMP.src],
+  // класс lamp-taken (глава 7): лампу для ногтей унесли
+  build: () => VP.image('class="bg"') + VP_NOLAMP.image('class="bg-nolamp"'),
   hotspots: Object.entries(VERA_P_ZONES).map(([id, r]) => {
     const [label, shot, lines] = LOOK_VERA[id];
     return { id, label, shot, shape: VP.rect(...r), lines };
@@ -63,10 +68,11 @@ export const breadP = {
   world: 'p',
   title: 'Хлебница',
   bg: BREAD.src,
-  extra: [BREAD_OPEN.src],
+  extra: [BREAD_OPEN.src, BREAD_EMPTY.src],
   shots: { wide: [0, 0, 1600, 900] },
   ambience: ['rain', 'fridge', 'tap'],
-  build: () => BREAD.image('class="bg"') + BREAD_OPEN.image('class="bg-open"'),
+  // bread-open — открыта, наушники внутри; bread-empty — наушники забрали
+  build: () => BREAD.image('class="bg"') + BREAD_OPEN.image('class="bg-open"') + BREAD_EMPTY.image('class="bg-open-empty"'),
   hotspots: [
     { id: 'breadbox', label: 'Хлебница', shot: '', shape: BREAD.rect(...BREAD_ZONE), lines: [] },
   ],

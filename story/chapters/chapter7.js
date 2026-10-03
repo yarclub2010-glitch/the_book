@@ -38,6 +38,7 @@ export default {
     'w-hint-on', 'wp-reply-on', 'wp-m2-on', 'wp-4r-on',
     s.flags.msg && 'w-p7-on',
     s.flags.uv && 'uv-on',
+    s.flags.hasLamp && 'lamp-taken',
   ].filter(Boolean),
 
   carry: (s) => [s.flags.hasKey && !s.flags.opened && 'маленький ключ', s.flags.hasLamp && 'Верина лампа для ногтей'].filter(Boolean).join(', '),
@@ -126,7 +127,7 @@ export default {
       if (id === 'naillamp') {
         if (!f.hasLamp && !f.readMsg) return { key: 'nolamp', lines: ['Маленькая белая лампа-купол. Вера сушит под ней лак. Не трогаю — не моё.'] };
         if (!f.hasLamp) return { key: 'take', set: { hasLamp: true }, lines: ['Белая лампа-купол, внутри — ряд синеватых диодов. Вера сушит под ней лак.', 'Вера на работе. Возьму на минутку. Верну — она и не заметит.'] };
-        return { key: 'taken', lines: ['Лампа у меня. Вернуть до девяти — пока Вера не пришла.'] };
+        return { key: 'taken', lines: ['На столе — пустое место, где стояла лампа. Вернуть до девяти — пока Вера не пришла.'] };
       }
     }
 

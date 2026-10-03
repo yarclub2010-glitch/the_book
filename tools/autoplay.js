@@ -257,6 +257,8 @@ export async function run(game) {
       await click('sink');
       await scene('bread-p');
       await click('breadbox');
+      check(flag('breadOpen') && !flag('hasHeadphones'), 'ch5: хлебница открыта, наушники внутри');
+      await click('breadbox');
       check(flag('hasHeadphones'), 'ch5: наушники найдены');
       await go('hall', 'hall-p');
       await click('vera');

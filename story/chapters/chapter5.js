@@ -35,8 +35,8 @@ export default {
 
   sceneClasses: (s) => [
     !s.flags.given && 'vera-here',
-    // открытая хлебница — кадр с наушниками: после того как их забрали и ушли, хлебница снова закрыта
-    s.flags.breadOpen && !s.flags.breadClosed && 'bread-open',
+    s.flags.breadOpen && 'bread-open',
+    s.flags.hasHeadphones && 'bread-empty',
     'wp-reply-on', 'wp-m2-on', 'wp-4r-on',
     s.flags.asked && 'w-ask-on',
     s.flags.hint && 'w-hint-on',
@@ -170,26 +170,24 @@ export default {
       if (!f.breadOpen) {
         return {
           key: 'open',
-          set: { breadOpen: true, hasHeadphones: true },
-          lines: ['Хлеба в хлебнице нет. Зато — батарейки, ключи… и наушники. Дужка обмотана чёрной изолентой.', 'Починены. Он всё прячет в хлебницу. А у нас мама потом выгребает оттуда батарейки и ругается на меня.'],
+          set: { breadOpen: true },
+          lines: ['Хлеба в хлебнице нет. Зато — батарейки… и наушники. Дужка обмотана чёрной изолентой.'],
         };
       }
-      if (f.breadClosed) return { key: 'closed', lines: ['Хлебница закрыта. Внутри — батарейки и ключи. Хлеба нет.'] };
-      return { key: 'empty', lines: ['Батарейки и ключи. Хлеба нет. Теперь ясно, почему Вера пишет «Купи хлеб!!».'] };
+      if (!f.hasHeadphones) {
+        return {
+          key: 'take',
+          set: { hasHeadphones: true },
+          lines: ['Беру. Починены. Он всё прячет в хлебницу. А у нас мама потом выгребает оттуда батарейки и ругается на меня.'],
+        };
+      }
+      return { key: 'empty', lines: ['Одни батарейки. Хлеба нет. Теперь ясно, почему Вера пишет «Купи хлеб!!».'] };
     }
 
     return null;
   },
 
   timers: [
-    {
-      // ушёл от хлебницы с наушниками — закрыл её (кадр открытой хлебницы — с наушниками внутри)
-      id: 'closeBread',
-      after: 1,
-      once: true,
-      when: (s) => s.flags.hasHeadphones && s.location !== 'bread',
-      set: { breadClosed: true },
-    },
     {
       // закон 3: подсказка двойника доходит, когда рядом с книгой никого нет
       id: 'hint',

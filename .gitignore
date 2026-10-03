@@ -5,3 +5,7 @@ Thumbs.db
 *.log
 .vscode/
 .idea/
+
+# временные файлы генерации картинок
+assets/_hq/
+assets/_hq2/

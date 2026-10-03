@@ -328,7 +328,7 @@ const BUILD = {
     const P = IMG.vp;
     const panes = [[722, 72, 850, 385], [870, 58, 1028, 388], [1053, 42, 1230, 390]];
     return rain('vp', P, panes, { far: 36, near: 10, splats: 9, seed: 170 }) + drops(P, panes, 10, 172, true)
-      + glow('vp-nail', P, [1203, 470], 60, '#8fa2ff', 0.2, 0.45, 5)
+      + `<g class="amb-naillamp">${glow('vp-nail', P, [1203, 470], 60, '#8fa2ff', 0.2, 0.45, 5)}</g>`
       + motes(P, [1060, 320, 1230, 460], 8, 173, '#ffe6b0', 0.5)
       + motes(P, [620, 360, 720, 470], 6, 174, '#ffd9a0', 0.5);
   },

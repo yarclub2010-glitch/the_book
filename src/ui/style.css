@@ -133,8 +133,8 @@ button { font: inherit; color: inherit; }
 .uhodi-on .pw-home { display: none; }
 .book-on-sill .bg-book { display: inline; }
 /* мир «Приходи», глава 5: Вера в дверях, открытая хлебница, подсказка в книге */
-.bg-vera, .bg-open, .w-hint, .w-ask, .w-4r, .wp-4r, .w-p7, .w-x8, .w-8a, .w-8b, .w-9, .wp-reply, .wp-m2, .anchor-ne { display: none; }
-.w-4r-on .w-4r, .wp-4r-on .wp-4r, .vera-here .bg-vera, .bread-open .bg-open, .w-hint-on .w-hint, .w-hint-on .w-ask, .w-ask-on .w-ask, .w-p7-on .w-p7,
+.bg-nolamp, .bg-open-empty, .bg-vera, .bg-open, .w-hint, .w-ask, .w-4r, .wp-4r, .w-p7, .w-x8, .w-8a, .w-8b, .w-9, .wp-reply, .wp-m2, .anchor-ne { display: none; }
+.lamp-taken .bg-nolamp, .bread-empty .bg-open-empty, .w-4r-on .w-4r, .wp-4r-on .wp-4r, .vera-here .bg-vera, .bread-open .bg-open, .w-hint-on .w-hint, .w-hint-on .w-ask, .w-ask-on .w-ask, .w-p7-on .w-p7,
 .w-x8-on .w-x8, .w-8a-on .w-8a, .w-8b-on .w-8b, .w-9-on .w-9, .wp-reply-on .wp-reply, .wp-m2-on .wp-m2, .ne-written .anchor-ne { display: inline; }
 /* глава 7: записка под ультрафиолетом — проступает «Не» */
 .note-uv, .uv-word { display: none; }

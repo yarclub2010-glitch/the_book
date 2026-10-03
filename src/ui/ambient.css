@@ -163,3 +163,6 @@
 .no-motion .life-letter .mag text, .no-motion .life-note .note-a, .no-motion .life-note .note-b { animation: none !important; }
 
 
+
+/* лампу для ногтей унесли (глава 7) — её отсвет гаснет */
+.lamp-taken .amb-naillamp { display: none; }
