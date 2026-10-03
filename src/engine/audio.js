@@ -21,7 +21,7 @@ const P_CHORDS = [[52, 55, 59, 62, 66], [52, 55, 59, 62, 64], [50, 55, 59, 62, 6
 const P_ROOTS = [40, 36, 35, 38];
 
 // Темы, для которых может лежать записанный файл assets/music/<имя>.mp3
-const MUSIC_FILES = ['title', 'np-night', 'np-morning', 'p-night', 'tension', 'dom03', 'vera', 'finale'];
+const MUSIC_FILES = ['title', 'np-night', 'np-morning', 'p-night', 'dom03', 'vera', 'finale'];
 // записи громче синтеза — чуть приглушаем, чтобы музыка оставалась под диалогом
 const FILE_LEVEL = 0.55;
 // Живой шёпот «…ходи…» (записан голосом, assets/voice/whisper-N.m4a): если записи есть — звучит
