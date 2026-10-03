@@ -170,7 +170,7 @@ export default {
     // ---------- комната Веры ----------
     if (scene === 'vera-np') {
       if (id === 'desk') {
-        if (bookGone(s)) return { key: 'empty', lines: ['На месте книги — чистый прямоугольник в пыли. Как на кухонном подоконнике.'] };
+        if (bookGone(s)) return { key: 'empty', lines: ['Книги нет. Стол без неё как будто ниже.'] };
         return { go: 'desk' };
       }
       if (id === 'door') return { key: 'in', lines: ['Шесть лет я сюда не заходил. Мама — только по воскресеньям, с тряпкой.'] };
