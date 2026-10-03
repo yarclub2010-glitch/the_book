@@ -8,8 +8,21 @@ const H = 900;
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Фоны-картинки грузятся заранее: сцена появляется, только когда картинка готова
+// Фоны-картинки грузятся заранее: сцена появляется, только когда картинка готова.
+// Раскодируются только кадры текущей главы (Stage.prepare) и то, что показывается; остальные файлы
+// в фоне по одному подтягиваются в кэш браузера (warm) — кадры большие, держать все раскодированными нельзя.
 const images = new Map();
+const warmed = new Set();
+async function warm(list) {
+  await sleep(4000);
+  for (const src of list) {
+    if (warmed.has(src) || images.has(src)) continue;
+    warmed.add(src);
+    try {
+      await fetch(src, { priority: 'low' }).then((r) => r.blob());
+    } catch { /* нет сети — кадр загрузится, когда понадобится */ }
+  }
+}
 export function preload(src) {
   if (!src) return Promise.resolve();
   if (!images.has(src)) {
@@ -31,10 +44,27 @@ export class Stage {
     this.anim = null;
     this.cache = new Map();
     this.speed = 1; // во время пропуска всё ускоряется
-    // Все картинки всех сцен (фон, фото-якорь, кадры «без книги», погасшее бра…) грузятся заранее
-    Object.keys(scenes).forEach((id) => this.images(id).forEach(preload));
-    // и фотографии предметов для осмотра
-    Object.values(scenes).forEach((sc) => (sc.hotspots || []).forEach((h) => h.view && preload(h.view)));
+    // Все картинки всех сцен (фон, фото-якорь, кадры «без книги», погасшее бра, фото предметов) —
+    // в кэш браузера, в фоне и по одному; раскодируются по главам (prepare)
+    warm([...new Set(Object.keys(scenes).flatMap((id) => this.sceneFiles(id)))]);
+  }
+
+  // файлы сцены: всё, что нарисовано картинками, и фотографии предметов для осмотра
+  sceneFiles(id) {
+    return [...this.images(id), ...(scenes[id].hotspots || []).map((h) => h.view).filter(Boolean)];
+  }
+
+  // Подготовить главу: раскодировать кадры всех её мест во все времена суток
+  prepare(chapter) {
+    const ids = new Set();
+    for (const L of Object.values(chapter.locations || {})) {
+      for (const time of ['night', 'evening', 'morning']) {
+        try {
+          ids.add(L.scene({ time, flags: {}, legacy: {}, location: '' }));
+        } catch { /* сцена зависит от состояния, которого ещё нет */ }
+      }
+    }
+    ids.forEach((id) => scenes[id] && this.sceneFiles(id).forEach(preload));
   }
 
   get root() {

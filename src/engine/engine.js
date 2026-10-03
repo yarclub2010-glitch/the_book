@@ -552,6 +552,8 @@ export class Game {
     this.mode = 'beat';
     await this.enterLocation(this.state.location, { transition: 'fade', dur: 1.8 });
     if (this.token !== token) return;
+    // кадры остальных мест главы — заранее, пока идёт вступление
+    this.stage.prepare(ch);
     if (!saved && ch.intro) await this.beat(ch.intro);
     else this.resumeExplore();
   }
