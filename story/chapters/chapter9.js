@@ -133,6 +133,11 @@ export default {
       }
       if (id === 'bed') return { key: 'am', lines: ['Не сейчас.'] };
     }
+    if (scene.startsWith('room') && id === 'radiator') {
+      return s.legacy && s.legacy.fixedRadiator
+        ? { key: 'rad', lines: ['Батарея молчит. На вентиле — новая прокладка. Из резинки от банки.', 'Он. За один день в моём доме. Полгода я слушал этот стук.'] }
+        : { key: 'rad', lines: ['Батарея стучит. Как всегда. Он бы, наверное, починил.'] };
+    }
     if (scene === 'vera-np' && id === 'door') return { go: 'hall' };
     if (scene === 'vera-np' && id === 'desk' && f.sawGlass && !f.hasFolder) {
       return {

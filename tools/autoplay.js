@@ -280,6 +280,15 @@ export async function run(game) {
       await go('room', 'room-np-morning');
       await click('laptop');
       check(flag('laptopOpen'), 'ch6: ноутбук открыт паролем 1209');
+      // необязательная загадка «Батарея»: ключ из шкафчика, кольцо с банки
+      await click('radiator');
+      check(flag('sawRadiator') && !flag('fixedRadiator'), 'ch6: батарея стучит');
+      await go('kitchen', 'kitchen-np-morning');
+      await click('cabinet');
+      await click('fridge');
+      await go('room', 'room-np-morning');
+      await click('radiator');
+      check(flag('fixedRadiator'), 'ch6: двойник починил батарею');
       check(JSON.parse(localStorage.getItem('thebook:laws') || '[]').includes('sameday'), 'ch6: в дневнике законов — «один и тот же день»');
       await go('kitchen', 'kitchen-np-morning');
       await click('miri', (t) => t.findIndex((x) => x.includes('включи музыку')));

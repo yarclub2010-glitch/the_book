@@ -34,7 +34,10 @@ export default {
   sceneClasses: () => ['note-shift', 'book-on-sill', 'book-taken', 'book-shifted'],
 
   // память истории: двойник позаботился о чужой семье
-  remember: (s) => ({ sentTrack: !!s.flags.sentTrack }),
+  carry: (s) => [s.flags.hasWrench && !s.flags.fixedRadiator && 'разводной ключ', s.flags.hasRing && !s.flags.fixedRadiator && 'резиновое кольцо'].filter(Boolean).join(', '),
+
+  // fixedRadiator — не на концовку, а на эхо в главе 9: здешний Тихон заметит, что батарея молчит
+  remember: (s) => ({ sentTrack: !!s.flags.sentTrack, fixedRadiator: !!s.flags.fixedRadiator }),
 
   end: {
     text: [
@@ -70,6 +73,33 @@ export default {
 
   interact(scene, id, s) {
     const f = s.flags;
+
+    // необязательная загадка «Батарея»: он мастер, а в чужом доме до этого «руки не доходят»
+    if (scene.startsWith('room') && id === 'radiator') {
+      if (f.fixedRadiator) return { key: 'fixed', lines: ['Молчит. Пусть хоть ночью здесь будет тихо по-хорошему.'] };
+      if (f.hasWrench && f.hasRing) {
+        return {
+          beat: [
+            ['think', 'Перекрываю вентиль. Ключом — гайку. Старая прокладка рассыпается в крошку.'],
+            ['sfx', 'clink'],
+            ['think', 'Кольцо от банки — по размеру, как родное. Затягиваю.'],
+            ['set', { fixedRadiator: true }],
+            ['think', 'Открываю. Тишина. Пять минут — а он полгода слушал этот стук.'],
+          ],
+        };
+      }
+      return {
+        key: 'knock',
+        set: { sawRadiator: true },
+        lines: ['Батарея стучит. Прокладка на вентиле. Пять минут работы — а он не чинит.', 'Нужен ключ. И прокладка — хоть из чего-нибудь резинового.'],
+      };
+    }
+    if (scene.startsWith('kitchen') && id === 'cabinet' && f.sawRadiator && !f.hasWrench) {
+      return { key: 'wrench', set: { hasWrench: true }, lines: ['Ключи, батарейки — и под ними разводной ключ. Ржавый, но живой. Беру.'] };
+    }
+    if (scene.startsWith('kitchen') && id === 'fridge' && f.sawRadiator && !f.hasRing) {
+      return { key: 'ring', shot: 'fridge', set: { hasRing: true }, lines: ['В холодильнике — банка огурцов. С крышки снимаю резиновое кольцо.', 'Вот и прокладка. Мама не заметит — крышка и так держится.'] };
+    }
 
     // ---------- кухня ----------
     if (scene.startsWith('kitchen')) {
