@@ -206,6 +206,7 @@ export async function run(game) {
       await click('pageR');
       await click('pageR');
       check(flag('replied'), 'ch4: «Приду.» проступило ожогом');
+      check(JSON.parse(localStorage.getItem('thebook:laws') || '[]').includes('heat'), 'ch4: в дневнике — «Доходит не сок, а жар»');
       await go('room', 'room-np-evening');
       await click('bed');
       await scene('room-np-morning');
@@ -377,6 +378,7 @@ export async function run(game) {
       await go('kitchen', 'kitchen-np-evening');
       await click('photo');
       check(flag('frameOpen'), 'ch9: фото вынуто из-под стекла');
+      check(JSON.parse(localStorage.getItem('thebook:laws') || '[]').includes('glass'), 'ch9: в дневнике — «Общая — только сама вещь»');
       await go('room', 'room-np-evening');
       await click('bed');
       await go('kitchen', 'kitchen-np-morning');
