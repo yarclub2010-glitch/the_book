@@ -469,6 +469,13 @@ button { font: inherit; color: inherit; }
 /* с той стороны ответили — шов вспыхивает */
 .title.answered .seam-line line { animation: seam-answer 0.5s ease-out; }
 @keyframes seam-answer { 0% { stroke-width: 9px; stroke: #fff; } 100% { stroke-width: 3px; stroke: #fff1d6; } }
+/* и на миг гаснет лампа на тёмной кухне: провал, короткая вспышка, снова провал — и свет возвращается */
+.title.answered .backdrop-half.np { animation: lamp-out 0.75s linear; }
+@keyframes lamp-out {
+  0% { filter: brightness(1); } 6% { filter: brightness(0.22) saturate(0.6); } 24% { filter: brightness(0.22) saturate(0.6); }
+  30% { filter: brightness(0.85); } 36% { filter: brightness(0.3) saturate(0.7); } 52% { filter: brightness(0.3) saturate(0.7); }
+  70% { filter: brightness(1.08); } 100% { filter: brightness(1); }
+}
 /* стук: круг от точки удара; ответный — с той стороны шва, бледнее и розовее */
 .knocks { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
 .knock { position: absolute; width: 3cqw; height: 3cqw; margin: -1.5cqw 0 0 -1.5cqw; border-radius: 50%; border: 0.18cqw solid rgba(255, 236, 200, 0.9); box-shadow: 0 0 1.2cqw rgba(255, 214, 150, 0.6), inset 0 0 1cqw rgba(255, 214, 150, 0.35); animation: knock 0.9s ease-out forwards; }
