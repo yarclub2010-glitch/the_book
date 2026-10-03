@@ -126,12 +126,12 @@ button { font: inherit; color: inherit; }
 .bg-evening { filter: brightness(1.12) sepia(0.12) saturate(1.05); }
 
 /* Состояние мира на сцене (классы от главы) */
-.note-b, .sill-book, .bg-nobook, .bg-book { display: none; }
+.note-b, .bg-nobook, .bg-book, .bg-book-any { display: none; }
 /* ночная кухня П с двойником: до «УХОДИ» буквы вразнобой, после — ряд внизу дверцы */
 .pw-row { display: none; }
 .uhodi-on .pw-row { display: inline; }
 .uhodi-on .pw-home { display: none; }
-.book-on-sill .bg-book { display: inline; }
+.book-on-sill .bg-book, .book-on-sill .bg-book-any { display: inline; }
 /* мир «Приходи», глава 5: Вера в дверях, открытая хлебница, подсказка в книге */
 .bg-nolamp, .bg-open-empty, .bg-vera, .bg-open, .w-hint, .w-ask, .w-4r, .wp-4r, .w-p7, .w-x8, .w-8a, .w-8b, .w-9, .wp-reply, .wp-m2, .anchor-ne { display: none; }
 .lamp-taken .bg-nolamp, .bread-empty .bg-open-empty, .w-4r-on .w-4r, .wp-4r-on .wp-4r, .vera-here .bg-vera, .bread-open .bg-open, .w-hint-on .w-hint, .w-hint-on .w-ask, .w-ask-on .w-ask, .w-p7-on .w-p7,
@@ -145,7 +145,6 @@ button { font: inherit; color: inherit; }
 .bg-book-shifted { display: none; }
 .book-on-sill.book-shifted .bg-book { display: none; }
 .book-on-sill.book-shifted .bg-book-shifted { display: inline; }
-.book-shifted .sill-book-pose { transform: translate(10px, 1px) rotate(-9deg); }
 .book-taken .bg-nobook { display: inline; }
 /* УФ-лампа Веры включена (позже по сюжету) */
 .bg-uv { display: none !important; }
@@ -161,7 +160,7 @@ button { font: inherit; color: inherit; }
 .w-reply-on .w-reply { animation: reveal 4s ease-out; }
 @keyframes reveal { from { opacity: 0; } }
 .note-shift .note-a { display: none; }
-.note-shift .note-b, .book-on-sill .sill-book { display: inline; }
+.note-shift .note-b { display: inline; }
 .frag.found rect { stroke: #ffcf7a; stroke-width: 4px; }
 .miri-ring { opacity: 0.45; }
 .miri-listen .miri-ring { animation: miri 1.6s ease-in-out infinite; }

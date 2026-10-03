@@ -19,6 +19,10 @@ const BG = {
   pf: A.plate('assets/backgrounds/K-P-2v2-night.jpg', 1376, 768),
   // утро в НП: отдельный рассветный кадр (сухое стекло, туман), выровнен по пикселям с K-NP-1
   npm: A.plate('assets/backgrounds/K-NP-1-morning.jpg', 1376, 768),
+  // те же кадры с Вериной книгой на подоконнике (пиксель в пиксель вне книги). На общем плане книга лежит
+  // в одном положении; её сдвиг из другого мира виден на крупном плане подоконника (I-SILL-NP-2-shifted)
+  npBook: A.plate('assets/backgrounds/K-NP-1-book.jpg', 1376, 768),
+  npmBook: A.plate('assets/backgrounds/K-NP-1-morning-book.jpg', 1376, 768),
 };
 
 // ---------- Магнитные буквы ----------
@@ -173,11 +177,12 @@ function buildNP(time) {
   const night = time === 'night';
   // утро — свой кадр (та же разметка), вечер — ночной кадр чуть светлее
   let s = commonDefs('np') + (time === 'morning' ? BG.npm.image('class="bg"') : B.image(`class="bg bg-${time}"`));
+  // книга на подоконнике (класс book-on-sill)
+  s += time === 'morning' ? BG.npmBook.image('class="bg-book-any"') : BG.npBook.image(`class="bg-book-any bg-${time}"`);
   if (time !== 'morning') s += semaphore(B, [249, 236]);
   // тёплый круг от лампы на столе
   const lamp = B.I(690, 380);
   s += `<circle class="flicker" cx="${lamp[0]}" cy="${lamp[1]}" r="380" fill="url(#knp-lamp)" style="mix-blend-mode:screen"/>`;
-  s += sillBook(B);
   // всё, что дорисовано поверх кадра, — под свет кухни: ночью лампа тёплая и тусклая, утром светлее
   const light = time === 'morning' ? 'brightness(0.88) sepia(0.25)' : 'brightness(0.66) sepia(0.45)';
   s += `<g class="np-props" style="filter:${light}">`;
@@ -209,68 +214,6 @@ function miri(B) {
     <ellipse cx="${x}" cy="${y - h}" rx="${w / 2}" ry="5" fill="#1a1716"/>
     <ellipse class="miri-ring" cx="${x}" cy="${y - h}" rx="${w / 2 - 2}" ry="3.6" fill="none" stroke="#9f8cff" stroke-width="2.4"/>
   </g>`;
-}
-
-// Верина книга на подоконнике (глава 2: Тихон кладёт её туда сам)
-// Лежит плашмя на доске подоконника и повторяет её перспективу: доска уходит вправо-вверх
-// (задний край у рамы: (420,536)→(550,479), передний: (480,560)→(636,483) — наклон ≈ −0.45),
-// глубина доски тут ≈ 50 px; книга — на ~60 % глубины, чуть отступив от рамы.
-// Углы в пикселях кадра (K-NP-1 / K-P-1v2 — пиксель в пиксель): задний левый, задний правый,
-// передний правый, передний левый. Видны верх, передний обрез (страницы) и левый торец.
-const SILL_BOOK_AT = [[472, 521], [540, 491], [564, 505], [496, 535]];
-function sillBook(B, swollen = false) {
-  const P4 = (dy) => SILL_BOOK_AT.map(([x, y]) => B.I(x, y + dy));
-  const top = P4(0);
-  const bottom = P4(swollen ? 9 : 10);
-  const side = [top[3], top[2], bottom[2], bottom[3]].join(' ');
-  // точка на переднем обрезе: t — доля от левого угла к правому
-  const along = (t, dy = 0) => {
-    const [[x3, y3], [x2, y2]] = [SILL_BOOK_AT[3], SILL_BOOK_AT[2]];
-    return B.I(x3 + (x2 - x3) * t, y3 + (y2 - y3) * t + dy);
-  };
-  // тень вытянута вдоль доски (наклон доски ≈ −24°)
-  const [sx, sy] = B.I(520, 522);
-  const shadow = (fill, op, extra = '') => `<ellipse cx="${sx}" cy="${sy}" rx="${52 * B.k}" ry="${12 * B.k}" fill="${fill}" opacity="${op}" transform="rotate(-24 ${sx} ${sy})" ${extra}/>`;
-  // книгу сдвинули в другом мире (класс book-shifted) — у нас она тоже съехала и повёрнута
-  const [px, py] = B.I(518, 513);
-  if (swollen) {
-    // мир П: тот же том, но бирюзовый переплёт и вздувшийся от воды блок страниц (обрез волной)
-    const wave = `M${along(0, 4)} Q${along(0.25, 7)} ${along(0.5, 4)} T${along(1, 4)}`;
-    return `${shadow('#2a1030', 0.35)}
-      <polygon points="${side}" fill="#f1e2cf"/>
-      <path d="${wave}" fill="none" stroke="#b9a18a" stroke-width="1.4"/>
-      <polygon points="${[top[0], top[3], bottom[3], bottom[0]].join(' ')}" fill="#1d3c48"/>
-      <polygon points="${top.join(' ')}" fill="#3f8f98" stroke="#1d3c48" stroke-width="1.4"/>
-      <polygon points="${top.join(' ')}" fill="#ffc1d8" opacity="0.18"/>`;
-  }
-  return sillBookNP(B);
-}
-
-// Мир НП — прежняя книга (пользователю она нравилась больше)
-function sillBookNP(B) {
-  const P4 = (dy) => [B.I(502, 477 + dy), B.I(590, 473 + dy), B.I(603, 487 + dy), B.I(510, 492 + dy)];
-  const top = P4(0);
-  const bottom = P4(6);
-  const side = [top[3], top[2], bottom[2], bottom[3]].join(' ');
-  const [sx, sy] = B.I(556, 494);
-  // книгу сдвинули в другом мире (класс book-shifted) — у нас она тоже съехала и повёрнута
-  const [px, py] = B.I(552, 484);
-  return `<g class="sill-book"><g class="sill-book-pose" style="transform-origin:${px.toFixed(0)}px ${py.toFixed(0)}px">
-    <defs><linearGradient id="sb-cloth" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2d3646"/><stop offset="0.55" stop-color="#232a37"/><stop offset="1" stop-color="#151a22"/></linearGradient>
-    <linearGradient id="sb-lamp" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffb96b" stop-opacity="0"/><stop offset="1" stop-color="#ffb96b" stop-opacity="0.22"/></linearGradient>
-    <linearGradient id="sb-pages" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2d0" stop-opacity="0.35"/><stop offset="1" stop-color="#3a2a14" stop-opacity="0.35"/></linearGradient>
-    <filter id="sb-blur"><feGaussianBlur stdDeviation="4"/></filter></defs>
-    <ellipse cx="${sx}" cy="${sy}" rx="${62 * B.k}" ry="${7 * B.k}" fill="#000" opacity="0.55" filter="url(#sb-blur)"/>
-    <polygon points="${side}" fill="#b9a883"/>
-    <polygon points="${side}" fill="url(#sb-pages)"/>
-    <polygon points="${top.join(' ')}" fill="url(#sb-cloth)" stroke="#0e131c" stroke-width="1" filter="url(#paper-tex)"/>
-    <polygon points="${[top[0], top[3], bottom[3], bottom[0]].join(' ')}" fill="#0e131d"/>
-    <polygon points="${top.join(' ')}" fill="url(#sb-lamp)"/>
-    <!-- потёртые углы и закладки, как на крупном плане -->
-    <polyline points="${top[0]} ${top[1]}" stroke="#6f7a8c" stroke-width="1" opacity="0.5" fill="none"/>
-    <polygon points="${B.I(566, 490)} ${B.I(574, 490)} ${B.I(575, 497)} ${B.I(567, 498)}" fill="#e2d3ae"/>
-    <polygon points="${B.I(583, 489)} ${B.I(590, 488)} ${B.I(592, 494)} ${B.I(584, 495)}" fill="#d8c69c"/>
-  </g></g>`;
 }
 
 // Детский рисунок: дом, поезд над крышей, четыре человечка, один зачёркнут — восковыми мелками
@@ -333,8 +276,7 @@ function buildP(withTwin) {
   const behind = (x) => (withTwin ? `<g mask="url(#kpt-boy)">${x}</g>` : x);
   o += behind(anchor(B, 'kp-photo', [977, 71, 1044, 145]));
   o += behind(paper(B, [1140, 250, 88, 50], -3, '#fbf3ee', ['Купи хлеб!!', '— В.'], 13, '#5a2a6a'));
-  // Верина книга на подоконнике — лежит здесь шесть лет, страницы вздулись
-  o += `<g class="sill-book-p">${sillBook(B, true)}</g>`;
+  // Верина книга на подоконнике лежит здесь шесть лет — она нарисована в самих кадрах кухни
   if (!withTwin) o += letters('pw');
   else {
     // ночью у холодильника двойник: буквы видны везде, кроме места, где он заслоняет дверцу
@@ -586,7 +528,7 @@ export const kitchenPEvening = {
 const SILL = A.plate('assets/backgrounds/I-SILL-NP-2.jpg', 1376, 768);
 const SILL_BOOK = A.plate('assets/backgrounds/I-SILL-NP-2-book.jpg', 1376, 768);
 const SILL_SHIFTED = A.plate('assets/backgrounds/I-SILL-NP-2-shifted.jpg', 1376, 768);
-export const SILL_SPOT = [500, 360, 965, 605]; // чистый прямоугольник, пиксели картинки
+export const SILL_SPOT = [500, 390, 1000, 612]; // чистый прямоугольник, пиксели картинки
 export const sillNP = {
   id: 'sill-np',
   world: 'np',
