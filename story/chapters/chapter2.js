@@ -64,6 +64,8 @@ export default {
 
   sceneClasses: (s) => [
     ev(s) && 'note-shift',
+    // вечер 18:40: в комнате Веры сумерки, как и на кухне (ночные кадры комнаты)
+    ev(s) && 'vera-night',
     s.flags.bookOnSill && 'book-on-sill',
     s.flags.bookShifted && 'book-shifted',
     bookGone(s) && 'book-taken',

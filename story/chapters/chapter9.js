@@ -77,6 +77,7 @@ export default {
     'book-on-sill', 'book-taken', 'book-shifted',
     'w-pencil-on', 'w-burn-on', 'w-reply-on', 'w-m2-on', 'w-9-on', 'w-hint-on', 'w-p7-on', 'w-8a-on', 'w-8b-on', 'w-4r-on',
     s.flags.ne && 'ne-written',
+    !morning(s) && 'vera-night',
   ].filter(Boolean),
 
   carry: (s) => [s.flags.hasPen && !s.flags.ne && 'маркер', s.flags.hasFolder && !s.flags.frameOpen && 'Верина косточка', s.flags.holding && 'фото с полки'].filter(Boolean).join(', '),
