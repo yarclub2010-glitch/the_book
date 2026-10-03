@@ -316,7 +316,8 @@ export function titleBackdrop(el) {
   // шов между мирами — точно по линии разреза (та же диагональ, что в clip-path половинок)
   const seam = document.createElement('div');
   seam.className = 'seam-line';
-  seam.innerHTML = '<svg viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="64" y1="0" x2="40" y2="100" vector-effect="non-scaling-stroke"/></svg>';
+  // линия нарисована для шва на 50 %; сдвигается вместе с ним (--seam на #title, см. ui/title.js)
+  seam.innerHTML = '<svg viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="62" y1="0" x2="38" y2="100" vector-effect="non-scaling-stroke"/></svg>';
   el.append(a, b, seam);
   // каждая половина проявляется, когда её картинки готовы
   [a, b].forEach((half) => {

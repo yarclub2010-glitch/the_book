@@ -451,20 +451,29 @@ button { font: inherit; color: inherit; }
 .backdrop-half { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease; }
 .backdrop-half.ready { opacity: 1; }
 .backdrop-half svg { width: 100%; height: 100%; display: block; animation: drift 30s ease-in-out infinite alternate; }
-.backdrop-half.np { clip-path: polygon(0 0, 64% 0, 40% 100%, 0 100%); }
-.backdrop-half.p { clip-path: polygon(64% 0, 100% 0, 100% 100%, 40% 100%); }
+/* стена между мирами: шов стоит на --seam (двигается за мышью, ui/title.js), наклон — ±12 % */
+.title { --seam: 52%; }
+.backdrop-half.np { clip-path: polygon(0 0, calc(var(--seam) + 12%) 0, calc(var(--seam) - 12%) 100%, 0 100%); }
+.backdrop-half.p { clip-path: polygon(calc(var(--seam) + 12%) 0, 100% 0, 100% 100%, calc(var(--seam) - 12%) 100%); }
 .title::before {
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.5) 34%, rgba(0, 0, 0, 0.08) 62%),
     radial-gradient(ellipse at 50% 120%, rgba(0, 0, 0, 0.55), transparent 60%);
 }
-.seam { display: none; }
 /* шов между мирами — по линии разреза половинок: янтарь «Не приходи» переходит в розовый «Приходи» */
 .seam-line { position: absolute; inset: 0; z-index: 1; pointer-events: none; animation: seam 5s ease-in-out infinite alternate; }
-.seam-line svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.seam-line svg { width: 100%; height: 100%; display: block; overflow: visible; transform: translateX(calc(var(--seam) - 50%)); }
 .seam-line line { stroke: #fff1d6; stroke-width: 3px; filter: drop-shadow(0 0 4px rgba(255, 226, 170, 1)) drop-shadow(0 0 14px rgba(255, 138, 184, 0.8)); }
 @keyframes seam { from { opacity: 0.8; } to { opacity: 1; } }
+/* с той стороны ответили — шов вспыхивает */
+.title.answered .seam-line line { animation: seam-answer 0.5s ease-out; }
+@keyframes seam-answer { 0% { stroke-width: 9px; stroke: #fff; } 100% { stroke-width: 3px; stroke: #fff1d6; } }
+/* стук: круг от точки удара; ответный — с той стороны шва, бледнее и розовее */
+.knocks { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.knock { position: absolute; width: 3cqw; height: 3cqw; margin: -1.5cqw 0 0 -1.5cqw; border-radius: 50%; border: 0.18cqw solid rgba(255, 236, 200, 0.9); box-shadow: 0 0 1.2cqw rgba(255, 214, 150, 0.6), inset 0 0 1cqw rgba(255, 214, 150, 0.35); animation: knock 0.9s ease-out forwards; }
+.knock.far { border-color: rgba(255, 170, 205, 0.75); box-shadow: 0 0 1.6cqw rgba(255, 138, 184, 0.5), inset 0 0 1.2cqw rgba(255, 138, 184, 0.3); animation-duration: 1.4s; filter: blur(0.08cqw); }
+@keyframes knock { 0% { transform: scale(0.2); opacity: 1; } 100% { transform: scale(4.2); opacity: 0; } }
 .title-block { position: absolute; z-index: 2; left: 7%; top: 50%; transform: translateY(-50%); }
 .logo {
   font-family: "Unbounded", sans-serif; font-weight: 700; font-size: 6.5cqw; line-height: 1; letter-spacing: -0.01em;
@@ -481,11 +490,13 @@ button { font: inherit; color: inherit; }
   filter: drop-shadow(0.15cqw 0.35cqw 0.25cqw rgba(0, 0, 0, 0.55));
   transition: transform 0.25s;
 }
-.mag-l.mag-bar { transform: translateY(-0.2cqw) rotate(var(--r)); }
+.mag-gap { width: 1.6cqw; }
 /* наведение — буква дрогнула, как магнит на дверце */
-.mag-l:hover { animation: mag-rattle 0.7s ease-out; }
+.mag-l:hover, .mag-l.rattle { animation: mag-rattle 0.7s ease-out; }
 @keyframes mag-rattle { 0% { transform: rotate(var(--r)); } 20% { transform: rotate(calc(var(--r) - 9deg)); } 45% { transform: rotate(calc(var(--r) + 6deg)); } 70% { transform: rotate(calc(var(--r) - 2deg)); } 100% { transform: rotate(var(--r)); } }
-.tagline { font-size: 1.7cqw; color: #e9dfcf; margin: 1cqw 0 3cqw; letter-spacing: 0.04em; }
+.logo.magnets { margin: 0; }
+.tagline { font-size: 1.5cqw; color: #e9dfcf; margin: 1.2cqw 0 3cqw; letter-spacing: 0.04em; font-style: italic; opacity: 0.85; transition: opacity 0.45s; }
+.tagline.swap { opacity: 0; }
 /* под «Продолжить» — где остановился */
 .menu button small { display: block; font-family: "Onest", sans-serif; text-transform: none; letter-spacing: 0.02em; font-size: 1cqw; color: rgba(255, 255, 255, 0.45); margin-top: 0.1cqw; }
 /* найденные концовки */

@@ -7,6 +7,7 @@ import { audio } from './audio.js';
 import { lifeFor } from '../scenes/ambient.js';
 import { LAWS } from '../../story/laws.js';
 import { Stage, titleBackdrop } from './stage.js';
+import { initTitle } from '../ui/title.js';
 import { scenes } from '../scenes/index.js';
 import chapter1 from '../../story/chapters/chapter1.js';
 import chapter2 from '../../story/chapters/chapter2.js';
@@ -70,6 +71,7 @@ export class Game {
     this.applySettings();
     this.bind();
     titleBackdrop($('#title .backdrop'));
+    initTitle($('#title'));
     this.makeGrain();
     setInterval(() => this.tick(), 1000);
     this.showTitle();

@@ -1382,6 +1382,12 @@ const SFX = {
     a.tone(a.sfxBus, { freq: midi(79), t, dur: 0.5, vol: 0.12, attack: 0.003, send: 0.3 });
     a.burst(a.sfxBus, { t, dur: 0.04, vol: 0.3, freq: 1400, q: 3 });
   },
+  // Стук в стену костяшками; muffled — ответ с той стороны: глуше, ниже, с эхом
+  knock(a, t, { muffled = false } = {}) {
+    a.tone(a.sfxBus, { freq: muffled ? 88 : 150, t, dur: muffled ? 0.16 : 0.1, vol: muffled ? 0.3 : 0.34, attack: 0.002, glide: 1.4 });
+    a.burst(a.sfxBus, { t, dur: 0.045, vol: muffled ? 0.3 : 0.6, type: 'lowpass', freq: muffled ? 300 : 1500, q: 0.9, attack: 0.001, send: muffled ? 0.55 : 0.12 });
+    if (!muffled) a.burst(a.sfxBus, { t: t + 0.004, dur: 0.02, vol: 0.18, freq: 2600, q: 2.5, attack: 0.001 });
+  },
   thud(a, t) {
     a.tone(a.sfxBus, { freq: 120, t, dur: 0.18, vol: 0.18, attack: 0.003, glide: 1.3 });
     a.burst(a.sfxBus, { t, dur: 0.1, vol: 0.12, type: 'lowpass', freq: 350 });
