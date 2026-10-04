@@ -451,24 +451,30 @@ button { font: inherit; color: inherit; }
 .backdrop-half { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease; }
 .backdrop-half.ready { opacity: 1; }
 .backdrop-half svg { width: 100%; height: 100%; display: block; animation: drift 30s ease-in-out infinite alternate; }
-/* стена между мирами: шов стоит на --seam (двигается за мышью, ui/title.js), наклон — ±12 % */
-.title { --seam: 52%; }
-.backdrop-half.np { clip-path: polygon(0 0, calc(var(--seam) + 12%) 0, calc(var(--seam) - 12%) 100%, 0 100%); }
-.backdrop-half.p { clip-path: polygon(calc(var(--seam) + 12%) 0, 100% 0, 100% 100%, calc(var(--seam) - 12%) 100%); }
+/* Стена между мирами — мягкая: розовая кухня лежит поверх тёмной и проявляется через размытую наклонную полосу.
+   --s — положение шва в процентах ширины, числом (двигается за мышью, ui/title.js). Кадр 16:9, шов наклонён
+   на ±12 % ширины; градиент идёт поперёк шва (113.1°), 1 % сдвига шва = 0.8064 % длины градиента. */
+.title { --s: 52; --p: calc(50% + (var(--s) - 50) * 0.8064%); }
+.backdrop-half.p {
+  -webkit-mask-image: linear-gradient(113.1deg, transparent calc(var(--p) - 5%), #000 calc(var(--p) + 5%));
+  mask-image: linear-gradient(113.1deg, transparent calc(var(--p) - 5%), #000 calc(var(--p) + 5%));
+}
 .title::before {
   content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.5) 34%, rgba(0, 0, 0, 0.08) 62%),
     radial-gradient(ellipse at 50% 120%, rgba(0, 0, 0, 0.55), transparent 60%);
 }
-/* шов между мирами — по линии разреза половинок: янтарь «Не приходи» переходит в розовый «Приходи» */
-.seam-line { position: absolute; inset: 0; z-index: 1; pointer-events: none; animation: seam 5s ease-in-out infinite alternate; }
-.seam-line svg { width: 100%; height: 100%; display: block; overflow: visible; transform: translateX(calc(var(--seam) - 50%)); }
-.seam-line line { stroke: #fff1d6; stroke-width: 3px; filter: drop-shadow(0 0 4px rgba(255, 226, 170, 1)) drop-shadow(0 0 14px rgba(255, 138, 184, 0.8)); }
+/* вместо резкой линии — тёплая дымка вдоль шва */
+.seam-line {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none; mix-blend-mode: screen; opacity: 0.8;
+  background: linear-gradient(113.1deg, transparent calc(var(--p) - 7%), rgba(255, 214, 160, 0.16) calc(var(--p) - 1.5%), rgba(255, 170, 200, 0.2) calc(var(--p) + 1.5%), transparent calc(var(--p) + 7%));
+  animation: seam 5s ease-in-out infinite alternate;
+}
 @keyframes seam { from { opacity: 0.8; } to { opacity: 1; } }
 /* с той стороны ответили — шов вспыхивает */
-.title.answered .seam-line line { animation: seam-answer 0.5s ease-out; }
-@keyframes seam-answer { 0% { stroke-width: 9px; stroke: #fff; } 100% { stroke-width: 3px; stroke: #fff1d6; } }
+.title.answered .seam-line { animation: seam-answer 0.7s ease-out; }
+@keyframes seam-answer { 0% { opacity: 1; filter: brightness(3.2); } 100% { opacity: 0.8; filter: brightness(1); } }
 /* и на миг гаснет лампа на тёмной кухне: провал, короткая вспышка, снова провал — и свет возвращается */
 .title.answered .backdrop-half.np { animation: lamp-out 0.75s linear; }
 @keyframes lamp-out {

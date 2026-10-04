@@ -298,7 +298,7 @@ function hotspotsMarkup(list, sceneId = 's') {
   return `<g class="hotspots">${defs}${items.join('')}</g>`;
 }
 
-// Фон главного меню: одна и та же кухня в двух мирах, разрезанная диагональю.
+// Фон главного меню: одна и та же кухня в двух мирах, одна плавно переходит в другую по наклонной полосе.
 // Кадры кухни «Не приходи» (ночь, лампа) и «Приходи» (закат после дождя) совпадают пиксель в пиксель —
 // разрез проходит через одну комнату: окно, подоконник, стол, холодильник. С «жизнью» сцены (капли, пар, бабочка).
 export function titleBackdrop(el) {
@@ -313,11 +313,9 @@ export function titleBackdrop(el) {
   };
   const a = half('np', 'kitchen-np-night');
   const b = half('p', 'kitchen-p-evening');
-  // шов между мирами — точно по линии разреза (та же диагональ, что в clip-path половинок)
+  // шов между мирами — мягкая дымка вдоль перехода (стили и движение за мышью: style.css, ui/title.js)
   const seam = document.createElement('div');
   seam.className = 'seam-line';
-  // линия нарисована для шва на 50 %; сдвигается вместе с ним (--seam на #title, см. ui/title.js)
-  seam.innerHTML = '<svg viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="62" y1="0" x2="38" y2="100" vector-effect="non-scaling-stroke"/></svg>';
   el.append(a, b, seam);
   // каждая половина проявляется, когда её картинки готовы
   [a, b].forEach((half) => {

@@ -35,7 +35,7 @@ export function initTitle(title) {
       // мышь давно не двигали — шов возвращается и медленно «дышит»
       const goal = now - lastMove > 5000 ? REST + Math.sin(now / 2600) * 2.2 : target;
       seam += (goal - seam) * 0.06;
-      title.style.setProperty('--seam', `${seam.toFixed(2)}%`);
+      title.style.setProperty('--s', seam.toFixed(2));
     }
     requestAnimationFrame(frame);
   };
