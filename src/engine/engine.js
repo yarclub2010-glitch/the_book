@@ -1184,6 +1184,19 @@ export class Game {
     // найденная концовка (для счётчика в главном меню)
     const ending = this.chapter.id === 'ch8x' ? 'exchange' : this.chapter.id === 'ch9' ? this.state.flags.ending : null;
     if (ending) store.set('endings', [...new Set([...store.get('endings', []), ending])]);
+    // у концовки своя иллюстрация (assets/endings/<имя>.jpg): экран финала показывает её, когда она загрузилась;
+    // нет файла — остаётся обычный тёмный экран
+    const endEl = $('#end');
+    endEl.classList.remove('has-art');
+    if (ending) {
+      const art = new Image();
+      art.onload = () => {
+        if (this.mode !== 'end') return;
+        endEl.style.setProperty('--art', `url("${art.src}")`);
+        endEl.classList.add('has-art');
+      };
+      art.src = `assets/endings/${ending}.jpg`;
+    }
     // запомнить решения главы — они влияют на следующие главы и на концовку
     if (this.chapter.remember) {
       const legacy = { ...store.get('legacy', {}), ...this.chapter.remember(this.state) };

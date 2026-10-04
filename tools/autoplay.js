@@ -461,6 +461,15 @@ export async function run(game) {
     ['ch9 → Мост', () => chapters.ch9({ stayedCold: true, sentTrack: true, choice: 'hide' }, 'Отпустить', 'Мост')],
     ['ch9 → Слияние', () => chapters.ch9({ stayedCold: true, returnedBrush: true, sentTrack: true, choice: 'hide' }, 'Держать', 'Слияние')],
   ];
+  // Иллюстрации концовок: у каждой из четырёх есть своя картина
+  {
+    const miss = [];
+    for (const e of ['exchange', 'split', 'bridge', 'merge']) {
+      const r = await fetch(`assets/endings/${e}.jpg`, { method: 'HEAD' });
+      if (!r.ok) miss.push(e);
+    }
+    check(miss.length === 0, `концовки: четыре иллюстрации на месте${miss.length ? ` — нет: ${miss.join(', ')}` : ''}`);
+  }
   // Двери: «его дверь» ведёт в его комнату, дверь Веры изнутри — в коридор, проход — на кухню;
   // любая зона-дверь хотя бы что-то отвечает (иначе щелчок уходит в пустоту)
   {
